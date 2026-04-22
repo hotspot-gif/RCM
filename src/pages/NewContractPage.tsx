@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import React from 'react'
 import {
   FileText,
@@ -93,7 +93,7 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
     staff_email: user?.email || '',
   })
 
-  const handleChange = (field: keyof FormData, value: string) => {
+  const handleChange = useCallback((field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
@@ -101,7 +101,7 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
     if (field === 'branch') {
       setForm((prev) => ({ ...prev, branch: value, zone: '' }))
     }
-  }
+  }, [errors])
 
   const handleSelectExisting = (retailerId: string) => {
     setSelectedExistingId(retailerId)
