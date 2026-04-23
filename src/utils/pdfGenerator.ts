@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts, PDFName, PDFDict } from 'pdf-lib'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import { format } from 'date-fns'
 
 export interface ContractFormData {

@@ -259,8 +259,6 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
 
   const zoneOptions = form.branch ? BRANCH_ZONES[form.branch as keyof typeof BRANCH_ZONES] || [] : []
 
-  const zoneOptions = form.branch ? BRANCH_ZONES[form.branch as keyof typeof BRANCH_ZONES] || [] : []
-
   if (submitted) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
