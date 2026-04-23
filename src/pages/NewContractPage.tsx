@@ -14,12 +14,14 @@ import {
   Printer,
   ArrowLeft,
   Hash,
+  Loader2,
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useDataStore, Retailer } from '../store/dataStore'
 import { BRANCHES, BRANCH_ZONES } from '../data/constants'
 import { format } from 'date-fns'
 import SignaturePad from '../components/SignaturePad'
+import { generateContractPDF, downloadPDF } from '../utils/pdfGenerator'
 
 interface NewContractPageProps {
   onNavigate: (page: string) => void
@@ -67,6 +69,7 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
   const [errors, setErrors] = useState<Partial<FormData>>({})
   const [useExistingRetailer, setUseExistingRetailer] = useState(false)
   const [selectedExistingId, setSelectedExistingId] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const availableRetailers = useDataStore.getState().retailers.filter((r) => {
     if (!user) return false
@@ -151,54 +154,92 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
     if (step === 2 && validateStep2()) setStep(3)
   }
 
-  const handleSubmit = () => {
-    const existingRetailer = selectedExistingId
-      ? availableRetailers.find((r) => r.id === selectedExistingId)
-      : null
+  const handleSubmit = async () => {
+    setIsGenerating(true)
+    try {
+      const existingRetailer = selectedExistingId
+        ? availableRetailers.find((r) => r.id === selectedExistingId)
+        : null
 
-    let retailerId = existingRetailer?.id
+      let retailerId = existingRetailer?.id
 
-    if (!existingRetailer) {
-      retailerId = generateRetailerId()
-      const newRetailer: Retailer = {
-        id: retailerId,
-        company_name: form.company_name,
-        vat_number: form.vat_number,
-        address_lane: form.address_lane,
-        house_number: form.house_number,
-        city: form.city,
-        postcode: form.postcode,
-        contact_person_name: form.contact_person_name,
-        contact_person_surname: form.contact_person_surname,
-        mobile_number: form.mobile_number,
-        landline_number: form.landline_number,
-        email: form.email,
-        branch: form.branch,
-        zone: form.zone,
+      if (!existingRetailer) {
+        retailerId = generateRetailerId()
+        const newRetailer: Retailer = {
+          id: retailerId,
+          company_name: form.company_name,
+          vat_number: form.vat_number,
+          address_lane: form.address_lane,
+          house_number: form.house_number,
+          city: form.city,
+          postcode: form.postcode,
+          contact_person_name: form.contact_person_name,
+          contact_person_surname: form.contact_person_surname,
+          mobile_number: form.mobile_number,
+          landline_number: form.landline_number,
+          email: form.email,
+          branch: form.branch,
+          zone: form.zone,
+          created_by: user?.id || '',
+          created_by_name: user?.full_name || '',
+          created_at: new Date().toISOString(),
+        }
+        addRetailer(newRetailer)
+      }
+
+      // Generate PDF if signature is captured
+      if (signature) {
+        const pdfResult = await generateContractPDF(
+          {
+            company_name: form.company_name,
+            vat_number: form.vat_number,
+            address_lane: form.address_lane,
+            house_number: form.house_number,
+            city: form.city,
+            postcode: form.postcode,
+            contact_person_name: form.contact_person_name,
+            contact_person_surname: form.contact_person_surname,
+            mobile_number: form.mobile_number,
+            landline_number: form.landline_number,
+            email: form.email,
+            branch: form.branch,
+            zone: form.zone,
+            retailer_email: form.retailer_email,
+            staff_email: form.staff_email,
+            contract_date: today,
+          },
+          signature,
+          null,
+          contractNumber
+        )
+
+        if (pdfResult.success && pdfResult.pdfBytes) {
+          downloadPDF(pdfResult.pdfBytes, `contract-${contractNumber}.pdf`)
+        }
+      }
+
+      addContract({
+        id: generateContractId(),
+        retailer_id: retailerId!,
+        retailer_name: form.company_name,
+        contract_number: contractNumber,
+        status: signature ? 'SIGNED' : 'PENDING',
+        retailer_signature: signature,
+        contract_date: today,
         created_by: user?.id || '',
         created_by_name: user?.full_name || '',
+        branch: form.branch,
+        zone: form.zone,
+        pdf_url: null,
         created_at: new Date().toISOString(),
-      }
-      addRetailer(newRetailer)
+      })
+
+      setSubmitted(true)
+    } catch (error) {
+      console.error('Error generating contract:', error)
+    } finally {
+      setIsGenerating(false)
     }
-
-    addContract({
-      id: generateContractId(),
-      retailer_id: retailerId!,
-      retailer_name: form.company_name,
-      contract_number: contractNumber,
-      status: signature ? 'SIGNED' : 'PENDING',
-      retailer_signature: signature,
-      contract_date: today,
-      created_by: user?.id || '',
-      created_by_name: user?.full_name || '',
-      branch: form.branch,
-      zone: form.zone,
-      pdf_url: null,
-      created_at: new Date().toISOString(),
-    })
-
-    setSubmitted(true)
   }
 
   const handlePrint = () => {
@@ -801,11 +842,21 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
 
           <button
             onClick={handleSubmit}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+            disabled={isGenerating}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg, #08dc7d, #245bc1)' }}
           >
-            <Check className="w-4 h-4" />
-            Generate & Send Contract
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Generating PDF...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                Generate & Send Contract
+              </>
+            )}
           </button>
         </div>
       )}
