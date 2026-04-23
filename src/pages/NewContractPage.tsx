@@ -297,7 +297,7 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Status</span>
-              <span className="font-semibold text-emerald-500">{signature ? 'Signed' : 'Pending'}</span>
+              <span className="font-semibold text-emerald-500">{retailerSignatureSaved && staffSignatureSaved ? 'Signed' : 'Pending'}</span>
             </div>
           </div>
 
