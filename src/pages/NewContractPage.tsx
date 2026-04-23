@@ -684,20 +684,6 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
             existingSignature={staffSignature}
           />
 
-          {/* Staff Signature */}
-          <SignaturePad
-            label="Staff Signature"
-            onSave={(dataUrl) => {
-              setStaffSignature(dataUrl)
-              setStaffSignatureSaved(true)
-            }}
-            onClear={() => {
-              setStaffSignature(null)
-              setStaffSignatureSaved(false)
-            }}
-            existingSignature={staffSignature}
-          />
-
           {!retailerSignatureSaved && (
             <div className="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-xl px-4 py-3">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
