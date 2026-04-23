@@ -47,20 +47,20 @@ export const DEFAULT_TEMPLATE_CONFIG: PDFTemplateConfig = {
     address: { page: 1, x: 150, y: 680, width: 250, height: 20, fontSize: 10 },
     mobile_number: { page: 1, x: 150, y: 660, width: 150, height: 20, fontSize: 10 },
     contact_person: { page: 1, x: 150, y: 640, width: 150, height: 20, fontSize: 10 },
-    
+
     retailer_signature: { page: 3, x: 80, y: 380, width: 180, height: 50 },
     staff_signature: { page: 3, x: 320, y: 380, width: 180, height: 50 },
     date_p3: { page: 3, x: 400, y: 450, width: 100, height: 20, fontSize: 10 },
-    
+
     company_name_p4: { page: 4, x: 100, y: 550, width: 200, height: 20, fontSize: 10 },
     vat_number_p4: { page: 4, x: 100, y: 530, width: 200, height: 20, fontSize: 10 },
     address_p4: { page: 4, x: 100, y: 510, width: 250, height: 20, fontSize: 10 },
     retailer_signature_p4: { page: 4, x: 80, y: 380, width: 180, height: 50 },
-    
+
     date_p5: { page: 5, x: 100, y: 650, width: 100, height: 20, fontSize: 10 },
     shop_name: { page: 5, x: 100, y: 620, width: 200, height: 20, fontSize: 10 },
     shop_address: { page: 5, x: 100, y: 600, width: 250, height: 20, fontSize: 10 },
-    
+
     date_p7: { page: 7, x: 100, y: 480, width: 100, height: 20, fontSize: 10 },
     retailer_name_p7: { page: 7, x: 100, y: 440, width: 150, height: 20, fontSize: 10 },
     retailer_signature_p7: { page: 7, x: 80, y: 350, width: 180, height: 50 },
@@ -94,12 +94,26 @@ export async function generateContractPDF(
   try {
     const pdfDoc = await loadTemplate()
     const pages = pdfDoc.getPages()
-    const form = pdfDoc.getForm()
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+
+    // Safely get form — some PDFs may not have an AcroForm
+    let form: ReturnType<PDFDocument['getForm']> | null = null
+    let formFields: string[] = []
+    try {
+      form = pdfDoc.getForm()
+      formFields = form.getFields().map((f) => f.getName())
+      console.log('PDF form fields found:', formFields)
+    } catch (formErr) {
+      console.warn('PDF does not have an AcroForm or form could not be read:', formErr)
+    }
+
+    const getFieldConfig = (fieldName: string): FieldPosition | undefined => {
+      return config.fields[fieldName]
+    }
 
     // Log PDF info for calibration
     console.log('Generating PDF with', pages.length, 'pages')
-    if (pages.length >= 7) {
+    if (pages.length > 0) {
       const p1 = pages[0]
       const { width: w1, height: h1 } = p1.getSize()
       console.log(`Page 1 size: ${w1.toFixed(0)}x${h1.toFixed(0)} pts`)
@@ -119,6 +133,7 @@ export async function generateContractPDF(
       fontSize: number = 10,
       maxWidth?: number
     ) => {
+      if (!text) return
       if (maxWidth) {
         const words = text.split(' ')
         let currentLine = ''
@@ -169,22 +184,6 @@ export async function generateContractPDF(
       }
     }
 
-    // Helper to try filling a form field, return true if successful
-    const tryFillFormField = (fieldNames: string[], value: string): boolean => {
-      for (const name of fieldNames) {
-        try {
-          const field = form.getTextField(name)
-          if (field) {
-            field.setText(value)
-            return true
-          }
-        } catch {
-          continue
-        }
-      }
-      return false
-    }
-
     // Page 1: Company Details
     const page1 = pages[0]
     if (page1) {
@@ -197,22 +196,26 @@ export async function generateContractPDF(
       ]
 
       fieldMappings.forEach(({ key, value }) => {
-        const config = getFieldConfig(key)
-        if (config) {
-          const candidateNames = [key, key.replace('_', ''), key.replace('_', ' ')]
+        const fieldConfig = getFieldConfig(key)
+        if (fieldConfig) {
+          const candidateNames = [key, key.replace(/_/g, ''), key.replace(/_/g, ' ')]
           let filled = false
           for (const name of candidateNames) {
             try {
-              const field = form.getTextField(name)
-              if (field) {
-                field.setText(value)
-                filled = true
-                break
+              if (form) {
+                const textField = form.getTextField(name)
+                if (textField) {
+                  textField.setText(value)
+                  filled = true
+                  break
+                }
               }
-            } catch {}
+            } catch {
+              // field not found, continue
+            }
           }
           if (!filled) {
-            drawTextOnPage(page1, value, config.x, config.y, config.fontSize || 10, config.width)
+            drawTextOnPage(page1, value, fieldConfig.x, fieldConfig.y, fieldConfig.fontSize || 10, fieldConfig.width)
           }
         }
       })
@@ -227,13 +230,17 @@ export async function generateContractPDF(
         let filled = false
         for (const name of dateFieldNames) {
           try {
-            const field = form.getTextField(name)
-            if (field) {
-              field.setText(formattedDate)
-              filled = true
-              break
+            if (form) {
+              const textField = form.getTextField(name)
+              if (textField) {
+                textField.setText(formattedDate)
+                filled = true
+                break
+              }
             }
-          } catch {}
+          } catch {
+            // field not found, continue
+          }
         }
         if (!filled) drawTextOnPage(page3, formattedDate, dateConfig.x, dateConfig.y, dateConfig.fontSize || 10)
       }
@@ -259,21 +266,25 @@ export async function generateContractPDF(
       ]
 
       p4Mappings.forEach(({ key, value }) => {
-        const config = getFieldConfig(key)
-        if (config) {
-          const candidateNames = [key, key.replace('_p4', ''), key.replace('_', '')]
+        const fieldConfig = getFieldConfig(key)
+        if (fieldConfig) {
+          const candidateNames = [key, key.replace('_p4', ''), key.replace(/_/g, '')]
           let filled = false
           for (const name of candidateNames) {
             try {
-              const field = form.getTextField(name)
-              if (field) {
-                field.setText(value)
-                filled = true
-                break
+              if (form) {
+                const textField = form.getTextField(name)
+                if (textField) {
+                  textField.setText(value)
+                  filled = true
+                  break
+                }
               }
-            } catch {}
+            } catch {
+              // field not found, continue
+            }
           }
-          if (!filled) drawTextOnPage(page4, value, config.x, config.y, config.fontSize || 10, config.width)
+          if (!filled) drawTextOnPage(page4, value, fieldConfig.x, fieldConfig.y, fieldConfig.fontSize || 10, fieldConfig.width)
         }
       })
 
@@ -293,21 +304,25 @@ export async function generateContractPDF(
       ]
 
       p5Mappings.forEach(({ key, value }) => {
-        const config = getFieldConfig(key)
-        if (config) {
+        const fieldConfig = getFieldConfig(key)
+        if (fieldConfig) {
           const candidateNames = [key, 'date', 'shop_name', 'shop_address', key.replace('_p5', '')]
           let filled = false
           for (const name of candidateNames) {
             try {
-              const field = form.getTextField(name)
-              if (field) {
-                field.setText(value)
-                filled = true
-                break
+              if (form) {
+                const textField = form.getTextField(name)
+                if (textField) {
+                  textField.setText(value)
+                  filled = true
+                  break
+                }
               }
-            } catch {}
+            } catch {
+              // field not found, continue
+            }
           }
-          if (!filled) drawTextOnPage(page5, value, config.x, config.y, config.fontSize || 10, config.width)
+          if (!filled) drawTextOnPage(page5, value, fieldConfig.x, fieldConfig.y, fieldConfig.fontSize || 10, fieldConfig.width)
         }
       })
     }
@@ -321,21 +336,25 @@ export async function generateContractPDF(
       ]
 
       p7Mappings.forEach(({ key, value }) => {
-        const config = getFieldConfig(key)
-        if (config) {
+        const fieldConfig = getFieldConfig(key)
+        if (fieldConfig) {
           const candidateNames = [key, 'date', 'retailer_name']
           let filled = false
           for (const name of candidateNames) {
             try {
-              const field = form.getTextField(name)
-              if (field) {
-                field.setText(value)
-                filled = true
-                break
+              if (form) {
+                const textField = form.getTextField(name)
+                if (textField) {
+                  textField.setText(value)
+                  filled = true
+                  break
+                }
               }
-            } catch {}
+            } catch {
+              // field not found, continue
+            }
           }
-          if (!filled) drawTextOnPage(page7, value, config.x, config.y, config.fontSize || 10, config.width)
+          if (!filled) drawTextOnPage(page7, value, fieldConfig.x, fieldConfig.y, fieldConfig.fontSize || 10, fieldConfig.width)
         }
       })
 
@@ -357,6 +376,15 @@ export async function generateContractPDF(
       })
     })
 
+    // Update field appearances so filled text is visible in all PDF viewers
+    if (form) {
+      try {
+        form.updateFieldAppearances(helveticaFont)
+      } catch (appearanceError) {
+        console.warn('Could not update field appearances (non-critical):', appearanceError)
+      }
+    }
+
     const pdfBytes = await pdfDoc.save()
     return { success: true, pdfBytes }
   } catch (error) {
@@ -366,7 +394,7 @@ export async function generateContractPDF(
 }
 
 export function downloadPDF(pdfBytes: Uint8Array, filename: string): void {
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+  const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
@@ -389,17 +417,17 @@ export function blobToBase64(blob: Blob): Promise<string> {
 export async function inspectPDFTemplate(): Promise<void> {
   const pdfDoc = await loadTemplate()
   const pages = pdfDoc.getPages()
-  const form = pdfDoc.getForm()
-  
+
   console.log('%c PDF Template Inspector', 'font-size: 16px; font-weight: bold; color: #245bc1;')
   console.log(`Total pages: ${pages.length}`)
   pages.forEach((page, idx) => {
     const { width, height } = page.getSize()
     console.log(`Page ${idx + 1}: ${width.toFixed(0)} x ${height.toFixed(0)} points (${(width/72).toFixed(1)}" x ${(height/72).toFixed(1)}")`)
   })
-  
+
   console.log('\nForm Fields:')
   try {
+    const form = pdfDoc.getForm()
     const fields = form.getFields()
     if (fields.length === 0) {
       console.log('  (No AcroForm fields found)')
