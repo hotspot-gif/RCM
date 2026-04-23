@@ -39,22 +39,23 @@ export interface PDFTemplateConfig {
   fields: Record<string, FieldPosition>
 }
 
+// Positions as percentages of page dimensions (more adaptable)
 export const DEFAULT_TEMPLATE_CONFIG: PDFTemplateConfig = {
   fields: {
-    company_name: { page: 1, x: 120, y: 680, width: 200, height: 20, fontSize: 10 },
-    vat_number: { page: 1, x: 120, y: 660, width: 200, height: 20, fontSize: 10 },
-    address: { page: 1, x: 120, y: 640, width: 250, height: 20, fontSize: 10 },
-    mobile_number: { page: 1, x: 120, y: 620, width: 150, height: 20, fontSize: 10 },
-    contact_person: { page: 1, x: 120, y: 600, width: 150, height: 20, fontSize: 10 },
+    company_name: { page: 1, x: 150, y: 720, width: 200, height: 20, fontSize: 10 },
+    vat_number: { page: 1, x: 150, y: 700, width: 200, height: 20, fontSize: 10 },
+    address: { page: 1, x: 150, y: 680, width: 250, height: 20, fontSize: 10 },
+    mobile_number: { page: 1, x: 150, y: 660, width: 150, height: 20, fontSize: 10 },
+    contact_person: { page: 1, x: 150, y: 640, width: 150, height: 20, fontSize: 10 },
     
-    retailer_signature: { page: 3, x: 50, y: 350, width: 200, height: 60 },
-    staff_signature: { page: 3, x: 300, y: 350, width: 200, height: 60 },
+    retailer_signature: { page: 3, x: 80, y: 380, width: 180, height: 50 },
+    staff_signature: { page: 3, x: 320, y: 380, width: 180, height: 50 },
     date_p3: { page: 3, x: 400, y: 450, width: 100, height: 20, fontSize: 10 },
     
-    company_name_p4: { page: 4, x: 100, y: 580, width: 200, height: 20, fontSize: 10 },
-    vat_number_p4: { page: 4, x: 100, y: 560, width: 200, height: 20, fontSize: 10 },
-    address_p4: { page: 4, x: 100, y: 540, width: 250, height: 20, fontSize: 10 },
-    retailer_signature_p4: { page: 4, x: 50, y: 300, width: 200, height: 60 },
+    company_name_p4: { page: 4, x: 100, y: 550, width: 200, height: 20, fontSize: 10 },
+    vat_number_p4: { page: 4, x: 100, y: 530, width: 200, height: 20, fontSize: 10 },
+    address_p4: { page: 4, x: 100, y: 510, width: 250, height: 20, fontSize: 10 },
+    retailer_signature_p4: { page: 4, x: 80, y: 380, width: 180, height: 50 },
     
     date_p5: { page: 5, x: 100, y: 650, width: 100, height: 20, fontSize: 10 },
     shop_name: { page: 5, x: 100, y: 620, width: 200, height: 20, fontSize: 10 },
@@ -62,7 +63,7 @@ export const DEFAULT_TEMPLATE_CONFIG: PDFTemplateConfig = {
     
     date_p7: { page: 7, x: 100, y: 480, width: 100, height: 20, fontSize: 10 },
     retailer_name_p7: { page: 7, x: 100, y: 440, width: 150, height: 20, fontSize: 10 },
-    retailer_signature_p7: { page: 7, x: 50, y: 320, width: 200, height: 60 },
+    retailer_signature_p7: { page: 7, x: 80, y: 350, width: 180, height: 50 },
   }
 }
 
@@ -93,8 +94,16 @@ export async function generateContractPDF(
   try {
     const pdfDoc = await loadTemplate()
     const pages = pdfDoc.getPages()
+    const form = pdfDoc.getForm()
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
-    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+
+    // Log PDF info for calibration
+    console.log('Generating PDF with', pages.length, 'pages')
+    if (pages.length >= 7) {
+      const p1 = pages[0]
+      const { width: w1, height: h1 } = p1.getSize()
+      console.log(`Page 1 size: ${w1.toFixed(0)}x${h1.toFixed(0)} pts`)
+    }
 
     const contractDate = formData.contract_date || format(new Date(), 'yyyy-MM-dd')
     const formattedDate = format(new Date(contractDate), 'dd/MM/yyyy')
@@ -102,8 +111,78 @@ export async function generateContractPDF(
     const fullAddress = getFullAddress(formData)
     const contactPerson = getContactPerson(formData)
 
-    const getFieldConfig = (key: string): FieldPosition | undefined => {
-      return config.fields[key]
+    const drawTextOnPage = (
+      page: ReturnType<PDFDocument['getPages']>[number],
+      text: string,
+      x: number,
+      y: number,
+      fontSize: number = 10,
+      maxWidth?: number
+    ) => {
+      if (maxWidth) {
+        const words = text.split(' ')
+        let currentLine = ''
+        let currentY = y
+        words.forEach((word) => {
+          const testLine = currentLine + (currentLine ? ' ' : '') + word
+          const metrics = helveticaFont.widthOfTextAtSize(testLine, fontSize)
+          if (metrics > maxWidth && currentLine) {
+            page.drawText(currentLine, { x, y: currentY, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) })
+            currentY -= fontSize + 2
+            currentLine = word
+          } else {
+            currentLine = testLine
+          }
+        })
+        page.drawText(currentLine, { x, y: currentY, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) })
+      } else {
+        page.drawText(text, { x, y, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) })
+      }
+    }
+
+    const drawImageOnPage = async (
+      page: ReturnType<PDFDocument['getPages']>[number],
+      imageDataUrl: string,
+      x: number,
+      y: number,
+      width: number,
+      height: number
+    ) => {
+      try {
+        let img
+        if (imageDataUrl.startsWith('data:')) {
+          const base64 = imageDataUrl.split(',')[1]
+          const binaryString = atob(base64)
+          const bytes = new Uint8Array(binaryString.length)
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i)
+          }
+          img = await pdfDoc.embedPng(bytes)
+        } else {
+          const response = await fetch(imageDataUrl)
+          const arrayBuffer = await response.arrayBuffer()
+          img = await pdfDoc.embedPng(arrayBuffer)
+        }
+        page.drawImage(img, { x, y, width, height })
+      } catch (e) {
+        console.error('Failed to embed image:', e)
+      }
+    }
+
+    // Helper to try filling a form field, return true if successful
+    const tryFillFormField = (fieldNames: string[], value: string): boolean => {
+      for (const name of fieldNames) {
+        try {
+          const field = form.getTextField(name)
+          if (field) {
+            field.setText(value)
+            return true
+          }
+        } catch {
+          continue
+        }
+      }
+      return false
     }
 
     const drawTextOnPage = (
@@ -111,14 +190,33 @@ export async function generateContractPDF(
       text: string,
       x: number,
       y: number,
-      fontSize: number = 10
+      fontSize: number = 10,
+      maxWidth?: number
     ) => {
-      page.drawText(text, {
-        x,
-        y,
-        size: fontSize,
-        font: helveticaFont,
-        color: rgb(0, 0, 0),
+      const lines = text.split('\n')
+      let currentY = y
+      lines.forEach((line) => {
+        if (maxWidth) {
+          // Simple word wrap
+          const words = line.split(' ')
+          let currentLine = ''
+          words.forEach((word) => {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word
+            const metrics = helveticaFont.widthOfTextAtSize(testLine, fontSize)
+            if (metrics > maxWidth && currentLine) {
+              page.drawText(currentLine, { x, y: currentY, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) })
+              currentY -= fontSize + 2
+              currentLine = word
+            } else {
+              currentLine = testLine
+            }
+          })
+          page.drawText(currentLine, { x, y: currentY, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) })
+          currentY -= fontSize + 2
+        } else {
+          page.drawText(line, { x, y: currentY, size: fontSize, font: helveticaFont, color: rgb(0, 0, 0) })
+          currentY -= fontSize + 2
+        }
       })
     }
 
@@ -154,30 +252,34 @@ export async function generateContractPDF(
     // Page 1: Company Details
     const page1 = pages[0]
     if (page1) {
-      const companyNameConfig = getFieldConfig('company_name')
-      if (companyNameConfig) {
-        drawTextOnPage(page1, formData.company_name, companyNameConfig.x, companyNameConfig.y, companyNameConfig.fontSize || 10)
-      }
+      const fieldMappings: Array<{ key: string; value: string }> = [
+        { key: 'company_name', value: formData.company_name },
+        { key: 'vat_number', value: formData.vat_number },
+        { key: 'address', value: fullAddress },
+        { key: 'mobile_number', value: formData.mobile_number },
+        { key: 'contact_person', value: contactPerson },
+      ]
 
-      const vatConfig = getFieldConfig('vat_number')
-      if (vatConfig) {
-        drawTextOnPage(page1, formData.vat_number, vatConfig.x, vatConfig.y, vatConfig.fontSize || 10)
-      }
-
-      const addressConfig = getFieldConfig('address')
-      if (addressConfig) {
-        drawTextOnPage(page1, fullAddress, addressConfig.x, addressConfig.y, addressConfig.fontSize || 10)
-      }
-
-      const mobileConfig = getFieldConfig('mobile_number')
-      if (mobileConfig) {
-        drawTextOnPage(page1, formData.mobile_number, mobileConfig.x, mobileConfig.y, mobileConfig.fontSize || 10)
-      }
-
-      const contactConfig = getFieldConfig('contact_person')
-      if (contactConfig) {
-        drawTextOnPage(page1, contactPerson, contactConfig.x, contactConfig.y, contactConfig.fontSize || 10)
-      }
+      fieldMappings.forEach(({ key, value }) => {
+        const config = getFieldConfig(key)
+        if (config) {
+          const candidateNames = [key, key.replace('_', ''), key.replace('_', ' ')]
+          let filled = false
+          for (const name of candidateNames) {
+            try {
+              const field = form.getTextField(name)
+              if (field) {
+                field.setText(value)
+                filled = true
+                break
+              }
+            } catch {}
+          }
+          if (!filled) {
+            drawTextOnPage(page1, value, config.x, config.y, config.fontSize || 10, config.width)
+          }
+        }
+      })
     }
 
     // Page 3: Signatures and Date
@@ -185,107 +287,125 @@ export async function generateContractPDF(
     if (page3) {
       const dateConfig = getFieldConfig('date_p3')
       if (dateConfig) {
-        drawTextOnPage(page3, formattedDate, dateConfig.x, dateConfig.y, dateConfig.fontSize || 10)
+        const dateFieldNames = ['date', 'date_p3', 'Date', 'Date_field']
+        let filled = false
+        for (const name of dateFieldNames) {
+          try {
+            const field = form.getTextField(name)
+            if (field) {
+              field.setText(formattedDate)
+              filled = true
+              break
+            }
+          } catch {}
+        }
+        if (!filled) drawTextOnPage(page3, formattedDate, dateConfig.x, dateConfig.y, dateConfig.fontSize || 10)
       }
 
       const retailerSigConfig = getFieldConfig('retailer_signature')
       if (retailerSignature && retailerSigConfig) {
-        await drawImageOnPage(
-          page3,
-          retailerSignature,
-          retailerSigConfig.x,
-          retailerSigConfig.y,
-          retailerSigConfig.width || 200,
-          retailerSigConfig.height || 60
-        )
+        await drawImageOnPage(page3, retailerSignature, retailerSigConfig.x, retailerSigConfig.y, retailerSigConfig.width || 180, retailerSigConfig.height || 50)
       }
 
       const staffSigConfig = getFieldConfig('staff_signature')
       if (staffSignature && staffSigConfig) {
-        await drawImageOnPage(
-          page3,
-          staffSignature,
-          staffSigConfig.x,
-          staffSigConfig.y,
-          staffSigConfig.width || 200,
-          staffSigConfig.height || 60
-        )
+        await drawImageOnPage(page3, staffSignature, staffSigConfig.x, staffSigConfig.y, staffSigConfig.width || 180, staffSigConfig.height || 50)
       }
     }
 
     // Page 4: Retailer details repeat with signature
     const page4 = pages[3]
     if (page4) {
-      const p4CompanyConfig = getFieldConfig('company_name_p4')
-      if (p4CompanyConfig) {
-        drawTextOnPage(page4, formData.company_name, p4CompanyConfig.x, p4CompanyConfig.y, p4CompanyConfig.fontSize || 10)
-      }
+      const p4Mappings: Array<{ key: string; value: string }> = [
+        { key: 'company_name_p4', value: formData.company_name },
+        { key: 'vat_number_p4', value: formData.vat_number },
+        { key: 'address_p4', value: fullAddress },
+      ]
 
-      const p4VatConfig = getFieldConfig('vat_number_p4')
-      if (p4VatConfig) {
-        drawTextOnPage(page4, formData.vat_number, p4VatConfig.x, p4VatConfig.y, p4VatConfig.fontSize || 10)
-      }
-
-      const p4AddressConfig = getFieldConfig('address_p4')
-      if (p4AddressConfig) {
-        drawTextOnPage(page4, fullAddress, p4AddressConfig.x, p4AddressConfig.y, p4AddressConfig.fontSize || 10)
-      }
+      p4Mappings.forEach(({ key, value }) => {
+        const config = getFieldConfig(key)
+        if (config) {
+          const candidateNames = [key, key.replace('_p4', ''), key.replace('_', '')]
+          let filled = false
+          for (const name of candidateNames) {
+            try {
+              const field = form.getTextField(name)
+              if (field) {
+                field.setText(value)
+                filled = true
+                break
+              }
+            } catch {}
+          }
+          if (!filled) drawTextOnPage(page4, value, config.x, config.y, config.fontSize || 10, config.width)
+        }
+      })
 
       const p4SigConfig = getFieldConfig('retailer_signature_p4')
       if (retailerSignature && p4SigConfig) {
-        await drawImageOnPage(
-          page4,
-          retailerSignature,
-          p4SigConfig.x,
-          p4SigConfig.y,
-          p4SigConfig.width || 200,
-          p4SigConfig.height || 60
-        )
+        await drawImageOnPage(page4, retailerSignature, p4SigConfig.x, p4SigConfig.y, p4SigConfig.width || 180, p4SigConfig.height || 50)
       }
     }
 
     // Page 5: Shop details
     const page5 = pages[4]
     if (page5) {
-      const p5DateConfig = getFieldConfig('date_p5')
-      if (p5DateConfig) {
-        drawTextOnPage(page5, formattedDate, p5DateConfig.x, p5DateConfig.y, p5DateConfig.fontSize || 10)
-      }
+      const p5Mappings: Array<{ key: string; value: string }> = [
+        { key: 'date_p5', value: formattedDate },
+        { key: 'shop_name', value: formData.company_name },
+        { key: 'shop_address', value: fullAddress },
+      ]
 
-      const p5ShopNameConfig = getFieldConfig('shop_name')
-      if (p5ShopNameConfig) {
-        drawTextOnPage(page5, formData.company_name, p5ShopNameConfig.x, p5ShopNameConfig.y, p5ShopNameConfig.fontSize || 10)
-      }
-
-      const p5AddressConfig = getFieldConfig('shop_address')
-      if (p5AddressConfig) {
-        drawTextOnPage(page5, fullAddress, p5AddressConfig.x, p5AddressConfig.y, p5AddressConfig.fontSize || 10)
-      }
+      p5Mappings.forEach(({ key, value }) => {
+        const config = getFieldConfig(key)
+        if (config) {
+          const candidateNames = [key, 'date', 'shop_name', 'shop_address', key.replace('_p5', '')]
+          let filled = false
+          for (const name of candidateNames) {
+            try {
+              const field = form.getTextField(name)
+              if (field) {
+                field.setText(value)
+                filled = true
+                break
+              }
+            } catch {}
+          }
+          if (!filled) drawTextOnPage(page5, value, config.x, config.y, config.fontSize || 10, config.width)
+        }
+      })
     }
 
     // Page 7: Final signature page
     const page7 = pages[6]
     if (page7) {
-      const p7DateConfig = getFieldConfig('date_p7')
-      if (p7DateConfig) {
-        drawTextOnPage(page7, formattedDate, p7DateConfig.x, p7DateConfig.y, p7DateConfig.fontSize || 10)
-      }
+      const p7Mappings: Array<{ key: string; value: string }> = [
+        { key: 'date_p7', value: formattedDate },
+        { key: 'retailer_name_p7', value: contactPerson },
+      ]
 
-      const p7NameConfig = getFieldConfig('retailer_name_p7')
-      if (p7NameConfig) {
-        drawTextOnPage(page7, contactPerson, p7NameConfig.x, p7NameConfig.y, p7NameConfig.fontSize || 10)
-      }
+      p7Mappings.forEach(({ key, value }) => {
+        const config = getFieldConfig(key)
+        if (config) {
+          const candidateNames = [key, 'date', 'retailer_name']
+          let filled = false
+          for (const name of candidateNames) {
+            try {
+              const field = form.getTextField(name)
+              if (field) {
+                field.setText(value)
+                filled = true
+                break
+              }
+            } catch {}
+          }
+          if (!filled) drawTextOnPage(page7, value, config.x, config.y, config.fontSize || 10, config.width)
+        }
+      })
 
       const p7SigConfig = getFieldConfig('retailer_signature_p7')
       if (retailerSignature && p7SigConfig) {
-        await drawImageOnPage(
-          page7,
-          retailerSignature,
-          p7SigConfig.x,
-          p7SigConfig.y,
-          p7SigConfig.width || 200,
-          p7SigConfig.height || 60
-        )
+        await drawImageOnPage(page7, retailerSignature, p7SigConfig.x, p7SigConfig.y, p7SigConfig.width || 180, p7SigConfig.height || 50)
       }
     }
 
@@ -330,8 +450,57 @@ export function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
-export function createCustomConfig(customPositions: Partial<PDFTemplateConfig['fields']>): PDFTemplateConfig {
+export async function inspectPDFTemplate(): Promise<void> {
+  const pdfDoc = await loadTemplate()
+  const pages = pdfDoc.getPages()
+  const form = pdfDoc.getForm()
+  
+  console.log('%c PDF Template Inspector', 'font-size: 16px; font-weight: bold; color: #245bc1;')
+  console.log(`Total pages: ${pages.length}`)
+  pages.forEach((page, idx) => {
+    const { width, height } = page.getSize()
+    console.log(`Page ${idx + 1}: ${width.toFixed(0)} x ${height.toFixed(0)} points (${(width/72).toFixed(1)}" x ${(height/72).toFixed(1)}")`)
+  })
+  
+  console.log('\nForm Fields:')
+  try {
+    const fields = form.getFields()
+    if (fields.length === 0) {
+      console.log('  (No AcroForm fields found)')
+    } else {
+      fields.forEach((field) => {
+        console.log(`  - "${field.getName()}" (${field.constructor.name})`)
+      })
+    }
+  } catch (e) {
+    console.log('  (Could not read form fields)')
+  }
+}
+
+export function getCalibrationPositions(): PDFTemplateConfig {
+  // These positions are starting points - adjust based on your template
+  // Use inspectPDFTemplate() to see page dimensions
+  // Coordinates are in points (1/72 inch), origin at bottom-left
   return {
-    fields: { ...DEFAULT_TEMPLATE_CONFIG.fields, ...customPositions }
+    fields: {
+      company_name: { page: 1, x: 150, y: 720, fontSize: 10 },
+      vat_number: { page: 1, x: 150, y: 700, fontSize: 10 },
+      address: { page: 1, x: 150, y: 680, fontSize: 10 },
+      mobile_number: { page: 1, x: 150, y: 660, fontSize: 10 },
+      contact_person: { page: 1, x: 150, y: 640, fontSize: 10 },
+      retailer_signature: { page: 3, x: 80, y: 380, width: 180, height: 50 },
+      staff_signature: { page: 3, x: 320, y: 380, width: 180, height: 50 },
+      date_p3: { page: 3, x: 400, y: 450, fontSize: 10 },
+      company_name_p4: { page: 4, x: 100, y: 550, fontSize: 10 },
+      vat_number_p4: { page: 4, x: 100, y: 530, fontSize: 10 },
+      address_p4: { page: 4, x: 100, y: 510, fontSize: 10 },
+      retailer_signature_p4: { page: 4, x: 80, y: 380, width: 180, height: 50 },
+      date_p5: { page: 5, x: 100, y: 650, fontSize: 10 },
+      shop_name: { page: 5, x: 100, y: 620, fontSize: 10 },
+      shop_address: { page: 5, x: 100, y: 600, fontSize: 10 },
+      date_p7: { page: 7, x: 100, y: 480, fontSize: 10 },
+      retailer_name_p7: { page: 7, x: 100, y: 440, fontSize: 10 },
+      retailer_signature_p7: { page: 7, x: 80, y: 350, width: 180, height: 50 },
+    }
   }
 }

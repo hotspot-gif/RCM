@@ -5,9 +5,10 @@ interface SignaturePadProps {
   onSave: (dataUrl: string) => void
   onClear: () => void
   existingSignature?: string | null
+  label?: string
 }
 
-export default function SignaturePad({ onSave, onClear, existingSignature }: SignaturePadProps) {
+export default function SignaturePad({ onSave, onClear, existingSignature, label = 'Signature' }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [hasSignature, setHasSignature] = useState(false)
@@ -104,7 +105,7 @@ export default function SignaturePad({ onSave, onClear, existingSignature }: Sig
   return (
     <div className="space-y-3">
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-        Retailer Signature
+        {label}
       </p>
       <div
         className="relative rounded-xl overflow-hidden border-2 border-dashed cursor-crosshair"

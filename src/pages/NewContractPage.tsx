@@ -21,6 +21,7 @@ import { useDataStore, Retailer } from '../store/dataStore'
 import { BRANCHES, BRANCH_ZONES } from '../data/constants'
 import { format } from 'date-fns'
 import SignaturePad from '../components/SignaturePad'
+import InputField from '../components/InputField'
 import { generateContractPDF, downloadPDF } from '../utils/pdfGenerator'
 
 interface NewContractPageProps {
@@ -62,8 +63,10 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
   const printRef = useRef<HTMLDivElement>(null)
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
-  const [signature, setSignature] = useState<string | null>(null)
-  const [signatureSaved, setSignatureSaved] = useState(false)
+  const [retailerSignature, setRetailerSignature] = useState<string | null>(null)
+  const [staffSignature, setStaffSignature] = useState<string | null>(null)
+  const [retailerSignatureSaved, setRetailerSignatureSaved] = useState(false)
+  const [staffSignatureSaved, setStaffSignatureSaved] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [contractNumber] = useState(generateContractNumber())
   const [errors, setErrors] = useState<Partial<FormData>>({})
@@ -97,14 +100,19 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
   })
 
   const handleChange = useCallback((field: keyof FormData, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }))
-    }
+    setForm((prev) => {
+      if (prev[field] === value) return prev
+      return { ...prev, [field]: value }
+    })
+    setErrors((prev) => {
+      if (!prev[field]) return prev
+      const { [field]: _, ...rest } = prev
+      return rest
+    })
     if (field === 'branch') {
       setForm((prev) => ({ ...prev, branch: value, zone: '' }))
     }
-  }, [errors])
+  }, [])
 
   const handleSelectExisting = (retailerId: string) => {
     setSelectedExistingId(retailerId)
@@ -145,7 +153,7 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
   }
 
   const validateStep2 = () => {
-    if (!signatureSaved) return false
+    if (!retailerSignatureSaved || !staffSignatureSaved) return false
     return true
   }
 
@@ -188,7 +196,7 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
       }
 
       // Generate PDF if signature is captured
-      if (signature) {
+      if (retailerSignature) {
         const pdfResult = await generateContractPDF(
           {
             company_name: form.company_name,
@@ -208,8 +216,8 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
             staff_email: form.staff_email,
             contract_date: today,
           },
-          signature,
-          null,
+          retailerSignature,
+          staffSignature,
           contractNumber
         )
 
@@ -223,14 +231,17 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
         retailer_id: retailerId!,
         retailer_name: form.company_name,
         contract_number: contractNumber,
-        status: signature ? 'SIGNED' : 'PENDING',
-        retailer_signature: signature,
+        status: retailerSignature ? 'SIGNED' : 'PENDING',
+        retailer_signature: retailerSignature,
+        staff_signature: staffSignature,
         contract_date: today,
         created_by: user?.id || '',
         created_by_name: user?.full_name || '',
         branch: form.branch,
         zone: form.zone,
         pdf_url: null,
+        retailer_email: form.retailer_email,
+        staff_email: form.staff_email,
         created_at: new Date().toISOString(),
       })
 
@@ -248,43 +259,7 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
 
   const zoneOptions = form.branch ? BRANCH_ZONES[form.branch as keyof typeof BRANCH_ZONES] || [] : []
 
-  const InputField = ({
-    label,
-    field,
-    type = 'text',
-    placeholder,
-    required = false,
-    readOnly = false,
-    icon: Icon,
-  }: {
-    label: string
-    field: keyof FormData
-    type?: string
-    placeholder?: string
-    required?: boolean
-    readOnly?: boolean
-    icon?: React.ElementType
-  }) => (
-    <div>
-      <label className="block text-xs font-semibold mb-1.5" style={{ color: '#21264e' }}>
-        {label} {required && <span className="text-red-400">*</span>}
-      </label>
-      <div className="relative">
-        {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />}
-        <input
-          type={type}
-          value={form[field]}
-          onChange={(e) => handleChange(field, e.target.value)}
-          placeholder={placeholder}
-          readOnly={readOnly}
-          className={`w-full ${Icon ? 'pl-9' : 'pl-3'} pr-3 py-2.5 rounded-xl border text-sm focus:outline-none transition-colors ${
-            errors[field] ? 'border-red-300 bg-red-50' : readOnly ? 'border-gray-100 bg-gray-50 text-gray-500' : 'border-gray-200 focus:border-blue-400'
-          }`}
-        />
-      </div>
-      {errors[field] && <p className="text-xs text-red-500 mt-1">{errors[field]}</p>}
-    </div>
-  )
+  const zoneOptions = form.branch ? BRANCH_ZONES[form.branch as keyof typeof BRANCH_ZONES] || [] : []
 
   if (submitted) {
     return (
@@ -454,28 +429,37 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
               <InputField
                 label="Company Name"
                 field="company_name"
+                value={form.company_name}
+                onChange={handleChange}
                 placeholder="Company SRL"
                 required
                 icon={Building2}
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
             </div>
             <InputField
               label="VAT Number"
               field="vat_number"
+              value={form.vat_number}
+              onChange={handleChange}
               placeholder="IT12345678901"
               required
               icon={Hash}
               readOnly={useExistingRetailer && !!selectedExistingId}
+              errors={errors}
             />
             <InputField
               label="Email"
               field="email"
+              value={form.email}
+              onChange={handleChange}
               type="email"
               placeholder="company@email.com"
               required
               icon={Mail}
               readOnly={useExistingRetailer && !!selectedExistingId}
+              errors={errors}
             />
           </div>
 
@@ -485,31 +469,43 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
               <InputField
                 label="Address Lane"
                 field="address_lane"
+                value={form.address_lane}
+                onChange={handleChange}
                 placeholder="Via Roma"
                 required
                 icon={MapPin}
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
               <InputField
                 label="House Number"
                 field="house_number"
+                value={form.house_number}
+                onChange={handleChange}
                 placeholder="42"
                 required
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
               <InputField
                 label="City"
                 field="city"
+                value={form.city}
+                onChange={handleChange}
                 placeholder="Milano"
                 required
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
               <InputField
                 label="Postcode"
                 field="postcode"
+                value={form.postcode}
+                onChange={handleChange}
                 placeholder="20100"
                 required
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
             </div>
           </div>
@@ -520,34 +516,46 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
               <InputField
                 label="First Name"
                 field="contact_person_name"
+                value={form.contact_person_name}
+                onChange={handleChange}
                 placeholder="Mario"
                 required
                 icon={User}
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
               <InputField
                 label="Surname"
                 field="contact_person_surname"
+                value={form.contact_person_surname}
+                onChange={handleChange}
                 placeholder="Rossi"
                 required
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
               <InputField
                 label="Mobile Number"
                 field="mobile_number"
+                value={form.mobile_number}
+                onChange={handleChange}
                 type="tel"
                 placeholder="+39 333 1234567"
                 required
                 icon={Phone}
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
               <InputField
                 label="Landline Number"
                 field="landline_number"
+                value={form.landline_number}
+                onChange={handleChange}
                 type="tel"
                 placeholder="+39 02 1234567"
                 icon={Phone}
                 readOnly={useExistingRetailer && !!selectedExistingId}
+                errors={errors}
               />
             </div>
           </div>
@@ -623,10 +631,10 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
           <div>
             <h3 className="text-base font-bold mb-1" style={{ color: '#21264e' }}>
-              Collect Retailer Signature
+              Collect Signatures
             </h3>
             <p className="text-sm text-gray-500">
-              Ask the retailer to sign in the box below using their finger or stylus.
+              Both retailer and staff must sign below.
             </p>
           </div>
 
@@ -650,34 +658,65 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
             </div>
           </div>
 
+          {/* Retailer Signature */}
           <SignaturePad
+            label="Retailer Signature"
             onSave={(dataUrl) => {
-              setSignature(dataUrl)
-              setSignatureSaved(true)
+              setRetailerSignature(dataUrl)
+              setRetailerSignatureSaved(true)
             }}
             onClear={() => {
-              setSignature(null)
-              setSignatureSaved(false)
+              setRetailerSignature(null)
+              setRetailerSignatureSaved(false)
             }}
+            existingSignature={retailerSignature}
           />
 
-          {!signatureSaved && (
+          {/* Staff Signature */}
+          <SignaturePad
+            label="Staff Signature"
+            onSave={(dataUrl) => {
+              setStaffSignature(dataUrl)
+              setStaffSignatureSaved(true)
+            }}
+            onClear={() => {
+              setStaffSignature(null)
+              setStaffSignatureSaved(false)
+            }}
+            existingSignature={staffSignature}
+          />
+
+          {/* Staff Signature */}
+          <SignaturePad
+            label="Staff Signature"
+            onSave={(dataUrl) => {
+              setStaffSignature(dataUrl)
+              setStaffSignatureSaved(true)
+            }}
+            onClear={() => {
+              setStaffSignature(null)
+              setStaffSignatureSaved(false)
+            }}
+            existingSignature={staffSignature}
+          />
+
+          {!retailerSignatureSaved && (
             <div className="flex items-center gap-2 text-amber-600 bg-amber-50 rounded-xl px-4 py-3">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <p className="text-xs">Please capture the signature before continuing, or skip to create a pending contract.</p>
+              <p className="text-xs">Both signatures are required. You can skip to create a pending contract.</p>
             </div>
           )}
 
           <div className="flex gap-3">
             <button
-              onClick={() => { setSignatureSaved(false); setSignature(null); setStep(3) }}
+              onClick={() => { setRetailerSignatureSaved(false); setRetailerSignature(null); setStaffSignatureSaved(false); setStaffSignature(null); setStep(3) }}
               className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
               Skip (Pending)
             </button>
             <button
               onClick={handleNextStep}
-              disabled={!signatureSaved}
+              disabled={!retailerSignatureSaved || !staffSignatureSaved}
               className="flex-1 py-3 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg, #245bc1, #46286E)' }}
             >
@@ -784,19 +823,34 @@ export default function NewContractPage({ onNavigate, prefillRetailer }: NewCont
                     <p className="font-semibold text-gray-800">{user?.full_name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">Signature</p>
-                    <p className="font-semibold" style={{ color: signatureSaved ? '#08dc7d' : '#f59e0b' }}>
-                      {signatureSaved ? '✓ Captured' : '⏳ Pending'}
+                    <p className="text-xs text-gray-400">Retailer Signature</p>
+                    <p className="font-semibold" style={{ color: retailerSignatureSaved ? '#08dc7d' : '#f59e0b' }}>
+                      {retailerSignatureSaved ? '✓ Captured' : '⏳ Pending'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Staff Signature</p>
+                    <p className="font-semibold" style={{ color: staffSignatureSaved ? '#08dc7d' : '#f59e0b' }}>
+                      {staffSignatureSaved ? '✓ Captured' : '⏳ Pending'}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {signature && (
+              {retailerSignature && (
                 <div className="border-t border-gray-100 pt-4">
                   <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Retailer Signature</p>
                   <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-                    <img src={signature} alt="Signature" className="max-h-24 mx-auto" />
+                    <img src={retailerSignature} alt="Retailer Signature" className="max-h-24 mx-auto" />
+                  </div>
+                </div>
+              )}
+
+              {staffSignature && (
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Staff Signature</p>
+                  <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+                    <img src={staffSignature} alt="Staff Signature" className="max-h-24 mx-auto" />
                   </div>
                 </div>
               )}
