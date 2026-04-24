@@ -74,6 +74,13 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
       return
     }
 
+    const email = values.email.trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address")
+      return
+    }
+
     startTransition(async () => {
       const res = await createContractAction({
         company_name: values.company_name.trim(),
@@ -87,7 +94,7 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
         post_code: postCodeClean,
         landline_number: landlineClean ? `+39${landlineClean}` : null,
         mobile_number: `+39${mobileClean}`,
-        email: values.email.trim(),
+        email: email,
         branch: values.branch || null,
         zone: values.zone || null,
       })

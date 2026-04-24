@@ -173,7 +173,7 @@ export async function buildContractPdf({
 
   // ---------- PAGE 4: Modulo di Registrazione Rivenditore ----------
   const p4 = pdf.addPage([PAGE_W, PAGE_H])
-  drawPage4RegistrationForm(p4, font, fontBold, fields, retailerSig, lycaLogo)
+  drawPage4RegistrationForm(p4, font, fontBold, fields, retailerSig, staffSig, lycaLogo)
   drawPageFooter(p4, 4)
 
   // ---------- PAGE 5 ----------
@@ -386,6 +386,7 @@ function drawPage4RegistrationForm(
   fontBold: PDFFont,
   f: ContractFields,
   retailerSig: PDFImage | null,
+  staffSig: PDFImage | null,
   lycaLogo: PDFImage | null,
 ) {
   // ----- Left header: Universal Service contact block -----
@@ -462,6 +463,15 @@ function drawPage4RegistrationForm(
 
   let ry = tableTop
   for (const [label, value] of rows) {
+    // Label background
+    page.drawRectangle({
+      x: tableX,
+      y: ry - rowH,
+      width: col1W,
+      height: rowH,
+      color: rgb(0.96, 0.96, 0.96),
+    })
+
     page.drawRectangle({
       x: tableX,
       y: ry - rowH,
@@ -558,12 +568,27 @@ function drawPage4RegistrationForm(
     color: BLACK,
   })
   const zLineX = tableX + 180
+  const zLineY = ry - 2
   page.drawLine({
-    start: { x: zLineX, y: ry - 2 },
-    end: { x: zLineX + sigLineLen, y: ry - 2 },
+    start: { x: zLineX, y: zLineY },
+    end: { x: zLineX + sigLineLen, y: zLineY },
     thickness: 0.5,
     color: BLACK,
   })
+  if (staffSig) {
+    const maxW = sigLineLen - 10
+    const maxH = 44
+    const ratio = Math.min(maxW / staffSig.width, maxH / staffSig.height)
+    const w = staffSig.width * ratio
+    const h = staffSig.height * ratio
+    page.drawImage(staffSig, {
+      x: zLineX + (sigLineLen - w) / 2,
+      y: zLineY + 1,
+      width: w,
+      height: h,
+      opacity: 0.95,
+    })
+  }
 
   // Blue horizontal divider
   ry -= 28
