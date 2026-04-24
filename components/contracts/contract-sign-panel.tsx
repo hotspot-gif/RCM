@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useTransition } from "react"
+import { useRef, useState, useTransition, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,22 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
   const [pending, startTransition] = useTransition()
   const [ack, setAck] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
+  const [retailerSig, setRetailerSig] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (step === 2) {
+      // Small delay to ensure the div is no longer 'hidden' and has dimensions
+      const timer = setTimeout(() => {
+        staffRef.current?.resize()
+      }, 50)
+      return () => clearTimeout(timer)
+    } else {
+      const timer = setTimeout(() => {
+        retailerRef.current?.resize()
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [step])
 
   function onNext() {
     const retailerData = retailerRef.current?.toDataUrl()
@@ -34,11 +50,14 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       toast.error("Confirm acceptance of the terms before signing.")
       return
     }
+    setRetailerSig(retailerData)
     setStep(2)
   }
 
   function onSubmit() {
-    const retailerData = retailerRef.current?.toDataUrl()
+    // Try to get current data, fallback to captured state
+    const currentRetailerData = retailerRef.current?.toDataUrl()
+    const retailerData = currentRetailerData || retailerSig
     const staffData = staffRef.current?.toDataUrl()
     
     if (!retailerData || !ack) {

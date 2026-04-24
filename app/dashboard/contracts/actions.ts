@@ -226,7 +226,11 @@ export async function finalizeContractAction(input: {
 
     return { ok: true, data: { pdfPath } }
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+    console.error("Finalize Error:", e)
+    return { 
+      ok: false, 
+      error: e instanceof Error ? e.message : "An unexpected error occurred during finalization" 
+    }
   }
 }
 

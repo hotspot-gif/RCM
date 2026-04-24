@@ -8,6 +8,7 @@ export interface SignaturePadHandle {
   toDataUrl: () => string | null
   clear: () => void
   isEmpty: () => boolean
+  resize: () => void
 }
 
 interface Props {
@@ -34,7 +35,10 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
       const rect = canvas.getBoundingClientRect()
       const dpr = window.devicePixelRatio || 1
       
-      // Only resize if the physical dimensions actually changed to avoid clearing on mobile scroll/address bar toggle
+      // If the element is hidden (e.g. step 2 when starting), width/height will be 0.
+      // We should not attempt to resize to 0.
+      if (rect.width === 0 || rect.height === 0) return
+
       const newWidth = Math.floor(rect.width * dpr)
       const newHeight = Math.floor(rect.height * dpr)
       
@@ -45,7 +49,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
       tempCanvas.width = canvas.width
       tempCanvas.height = canvas.height
       const tempCtx = tempCanvas.getContext("2d")
-      if (tempCtx) {
+      if (tempCtx && canvas.width > 0 && canvas.height > 0) {
         tempCtx.drawImage(canvas, 0, 0)
       }
 
@@ -54,18 +58,26 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
       ctx.scale(dpr, dpr)
       ctx.lineCap = "round"
       ctx.lineJoin = "round"
-      ctx.strokeStyle = "#000080" // Navy blue for a more natural ink look
+      ctx.strokeStyle = "#000080"
       ctx.lineWidth = 2.5
 
       // Restore the content if it wasn't empty
-      if (tempCtx) {
+      if (tempCtx && tempCanvas.width > 0 && tempCanvas.height > 0) {
         ctx.drawImage(tempCanvas, 0, 0, rect.width, rect.height)
       }
     }
 
+    const observer = new ResizeObserver(() => {
+      resize()
+    })
+    observer.observe(canvas)
+
     resize()
     window.addEventListener("resize", resize)
-    return () => window.removeEventListener("resize", resize)
+    return () => {
+      window.removeEventListener("resize", resize)
+      observer.disconnect()
+    }
   }, [])
 
   const getPos = useCallback((e: PointerEvent | React.PointerEvent) => {
@@ -127,6 +139,40 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
       if (!canvas) return null
       return canvas.toDataURL("image/png")
     },
+    resize: () => {
+      const canvas = canvasRef.current
+      const ctx = canvas?.getContext("2d")
+      if (!canvas || !ctx) return
+      
+      const rect = canvas.getBoundingClientRect()
+      const dpr = window.devicePixelRatio || 1
+      if (rect.width === 0 || rect.height === 0) return
+
+      const newWidth = Math.floor(rect.width * dpr)
+      const newHeight = Math.floor(rect.height * dpr)
+      
+      // Save content
+      const tempCanvas = document.createElement("canvas")
+      tempCanvas.width = canvas.width
+      tempCanvas.height = canvas.height
+      const tempCtx = tempCanvas.getContext("2d")
+      if (tempCtx && canvas.width > 0 && canvas.height > 0) {
+        tempCtx.drawImage(canvas, 0, 0)
+      }
+
+      canvas.width = newWidth
+      canvas.height = newHeight
+      ctx.scale(dpr, dpr)
+      ctx.lineCap = "round"
+      ctx.lineJoin = "round"
+      ctx.strokeStyle = "#000080"
+      ctx.lineWidth = 2.5
+
+      // Restore content
+      if (tempCtx && tempCanvas.width > 0 && tempCanvas.height > 0) {
+        ctx.drawImage(tempCanvas, 0, 0, rect.width, rect.height)
+      }
+    }
   }))
 
   return (
