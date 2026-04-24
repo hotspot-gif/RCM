@@ -44,7 +44,7 @@ export async function createUserAction(input: {
     }
 
     const supabase = await createClient()
-    const { error: insertError } = await supabase.from("users").insert({
+    const { error: insertError } = await supabase.from("users").upsert({
       id: newUserId,
       email: input.email,
       full_name: input.full_name,

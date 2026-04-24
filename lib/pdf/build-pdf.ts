@@ -359,7 +359,7 @@ function drawFourPartySignatureBlock(
       page.drawText(entry.signedBy, {
         x: col2X + 4,
         y: lineY + 2,
-        size: 10,
+        size: 9, // Reduced from 10 to match other pages and look more natural
         font,
         color: BLACK,
       })
@@ -367,7 +367,7 @@ function drawFourPartySignatureBlock(
       page.drawText(f.date, {
         x: col3X + 4,
         y: lineY + 2,
-        size: 10,
+        size: 9, // Reduced from 10
         font,
         color: BLACK,
       })
@@ -452,7 +452,7 @@ function drawPage4RegistrationForm(
   const tableX = MARGIN_X + 30
   const tableW = PAGE_W - 2 * (MARGIN_X + 30)
   const col1W = 180
-  const rowH = 30
+  const rowH = 24 // Reduced from 30 for a tighter, more professional look
 
   const rows: Array<[string, string]> = [
     ["Nome*", f.firstName],
@@ -494,14 +494,14 @@ function drawPage4RegistrationForm(
     })
     page.drawText(label, {
       x: tableX + 8,
-      y: ry - rowH + 11,
+      y: ry - rowH + 8, // Adjusted offset for smaller rowH
       size: 10,
       font: fontBold,
       color: BLACK,
     })
     page.drawText(value, {
       x: tableX + col1W + 8,
-      y: ry - rowH + 11,
+      y: ry - rowH + 8, // Adjusted offset
       size: 10,
       font,
       color: BLACK,
