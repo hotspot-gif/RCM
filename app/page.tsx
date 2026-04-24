@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
 import { FieldIQIcon } from "@/components/dashboard/field-iq-icon"
+import { BranchCoverageMap } from "@/components/home/branch-coverage-map"
 import Image from "next/image"
 
 export default async function HomePage() {
@@ -188,6 +189,10 @@ export default async function HomePage() {
             </CardContent>
           </Card>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 pb-24 lg:px-8">
+        <BranchCoverageMap />
       </section>
 
       {/* Trust/Footer Section */}
