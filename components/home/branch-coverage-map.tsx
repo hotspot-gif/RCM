@@ -127,15 +127,15 @@ const PROVINCES: Province[] = [
   { code: "SP", zone: "HS TORINO ZONE 3", branch: "LMIT-HS-TORINO", name: "La Spezia" },
 ]
 
-const BRANCH_PALETTE: Record<string, { base: string; shades: string[] }> = {
-  "LMIT-HS-BARI": { base: "#006AE0", shades: ["#cce0fb", "#99c1f7", "#66a3f3", "#3384ee", "#006AE0", "#0054b3", "#003f87"] },
-  "LMIT-HS-BOLOGNA": { base: "#08DC7D", shades: ["#cef9e7", "#9ef3d0", "#6dedb9", "#3de6a2", "#08DC7D", "#06b064", "#04844b"] },
-  "LMIT-HS-MILAN": { base: "#FFD54F", shades: ["#fff8dc", "#fff0b3", "#ffe98a", "#ffe161", "#FFD54F", "#ccaa3f", "#997f2f"] },
-  "LMIT-HS-NAPLES": { base: "#F04438", shades: ["#fde8e7", "#fbc4c1", "#f9a09b", "#f77b75", "#F04438", "#c0362d", "#902921"] },
-  "LMIT-HS-PADOVA": { base: "#7C3AED", shades: ["#ede9fb", "#cfc0f6", "#b197f1", "#936eec", "#7C3AED", "#6230bc", "#49248d"] },
-  "LMIT-HS-PALERMO": { base: "#F97316", shades: ["#feeadb", "#fcd0b0", "#fbb685", "#f99c5a", "#F97316", "#c75c12", "#95450d"] },
-  "LMIT-HS-ROME": { base: "#21264E", shades: ["#d4d5df", "#a8abbe", "#7d809e", "#51567d", "#21264E", "#1a1e3e", "#13172f"] },
-  "LMIT-HS-TORINO": { base: "#0EA5E9", shades: ["#d0edfa", "#a1daf6", "#72c8f2", "#43b5ee", "#0EA5E9", "#0b84ba", "#08638c"] },
+const BRANCH_PALETTE: Record<string, { base: string }> = {
+  "LMIT-HS-TORINO": { base: "#21264E" },
+  "LMIT-HS-MILAN": { base: "#245BC1" },
+  "LMIT-HS-PADOVA": { base: "#08DC7D" },
+  "LMIT-HS-BOLOGNA": { base: "#FFC8B2" },
+  "LMIT-HS-ROME": { base: "#FFDD64" },
+  "LMIT-HS-NAPLES": { base: "#00D7FF" },
+  "LMIT-HS-PALERMO": { base: "#46286E" },
+  "LMIT-HS-BARI": { base: "#1080FD" },
 }
 
 const BRANCH_LABEL: Record<string, string> = {
@@ -180,10 +180,6 @@ function loadScript(src: string) {
   })
 }
 
-function shortZone(zone: string) {
-  return zone.replace(/^HS /, "").replace(/ ZONE /, " Z")
-}
-
 export function BranchCoverageMap() {
   const mapHostRef = useRef<HTMLDivElement | null>(null)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
@@ -203,38 +199,26 @@ export function BranchCoverageMap() {
     return m
   }, [])
 
-  const branches = useMemo(() => [...new Set(PROVINCES.map((p) => p.branch))].sort(), [])
-
-  const branchZones = useMemo(() => {
-    const m: Record<string, string[]> = {}
-    for (const b of branches) {
-      m[b] = [...new Set(PROVINCES.filter((p) => p.branch === b).map((p) => p.zone))].sort()
-    }
-    return m
-  }, [branches])
-
-  const zonesCount = useMemo(() => [...new Set(PROVINCES.map((p) => p.zone))].length, [])
-
-  const stats = useMemo(() => {
-    const provincesCount = activeBranch ? PROVINCES.filter((p) => p.branch === activeBranch).length : PROVINCES.length
-    const zones = activeBranch ? branchZones[activeBranch]?.length ?? 0 : zonesCount
-    const branchesCount = activeBranch ? 1 : branches.length
-    return { provincesCount, zones, branchesCount }
-  }, [activeBranch, branchZones, branches.length, zonesCount])
-
-  function getZoneShade(branch: string, zone: string) {
-    const pal = BRANCH_PALETTE[branch]
-    if (!pal) return "#9ca3af"
-    const zonesForBranch = branchZones[branch] ?? []
-    const idx = zonesForBranch.indexOf(zone)
-    return pal.shades[Math.min(idx + 1, pal.shades.length - 1)]
-  }
+  const branches = useMemo(() => {
+    const preferredOrder = [
+      "LMIT-HS-TORINO",
+      "LMIT-HS-MILAN",
+      "LMIT-HS-PADOVA",
+      "LMIT-HS-BOLOGNA",
+      "LMIT-HS-ROME",
+      "LMIT-HS-NAPLES",
+      "LMIT-HS-PALERMO",
+      "LMIT-HS-BARI",
+    ]
+    const existing = new Set(PROVINCES.map((p) => p.branch))
+    return preferredOrder.filter((b) => existing.has(b))
+  }, [])
 
   function getColor(code: string) {
     const p = byCode[code]
     if (!p) return "#e5e7eb"
     if (activeBranchRef.current && p.branch !== activeBranchRef.current) return "#e5e7eb"
-    return getZoneShade(p.branch, p.zone)
+    return BRANCH_PALETTE[p.branch]?.base ?? "#9ca3af"
   }
 
   function getStroke(code: string) {
@@ -315,7 +299,6 @@ export function BranchCoverageMap() {
           if (p && tooltipEl) {
             tooltipEl.innerHTML = `
               <div style="font-weight:600; font-size:13px; color:#0f172a; margin-bottom:2px;">${p.name} (${code})</div>
-              <div style="font-size:11px; color:#475569;">${p.zone}</div>
               <div style="font-size:11px; color:#475569;">${BRANCH_LABEL[p.branch] ?? p.branch}</div>`
             tooltipEl.style.display = "block"
           }
@@ -363,7 +346,12 @@ export function BranchCoverageMap() {
     sel.attr("fill", (d: any) => getColor(d.properties.prov_acr)).attr("stroke", (d: any) => getStroke(d.properties.prov_acr))
   }, [activeBranch])
 
-  const branchesToShow = activeBranch ? [activeBranch] : branches
+  const branchBreakdown = useMemo(() => {
+    return branches.map((b) => {
+      const count = PROVINCES.filter((p) => p.branch === b).length
+      return { branch: b, count }
+    })
+  }, [branches])
 
   return (
     <Card className="border-none bg-white shadow-sm ring-1 ring-brand-navy/5">
@@ -374,7 +362,25 @@ export function BranchCoverageMap() {
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="text-xs font-semibold text-slate-500">Branches</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">8</div>
+              <div className="mt-1 text-sm text-slate-600">North · Centre · South · Islands</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="text-xs font-semibold text-slate-500">Zones</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">30</div>
+              <div className="mt-1 text-sm text-slate-600">Across all branches</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="text-xs font-semibold text-slate-500">Provinces</div>
+              <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">107</div>
+              <div className="mt-1 text-sm text-slate-600">Full national coverage</div>
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -408,74 +414,36 @@ export function BranchCoverageMap() {
             })}
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-            <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-              <div ref={mapHostRef} className="w-full" />
-              <div
-                ref={tooltipRef}
-                style={{ display: "none" }}
-                className="pointer-events-none absolute z-10 max-w-[200px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-lg"
-              />
-              {error ? (
-                <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-slate-600">
-                  {error}
-                </div>
-              ) : null}
-              {!error && !ready ? (
-                <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-slate-600">
-                  Loading map…
-                </div>
-              ) : null}
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-4">
-                <div className="text-xs font-semibold text-slate-500">Coverage summary</div>
-                <div className="mt-3 grid grid-cols-1 gap-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-600">Provinces</span>
-                    <span className="font-semibold text-slate-900 tabular-nums">{stats.provincesCount}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-600">Zones</span>
-                    <span className="font-semibold text-slate-900 tabular-nums">{stats.zones}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-600">Branches</span>
-                    <span className="font-semibold text-slate-900 tabular-nums">{stats.branchesCount}</span>
-                  </div>
-                </div>
+          <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+            <div ref={mapHostRef} className="w-full" />
+            <div
+              ref={tooltipRef}
+              style={{ display: "none" }}
+              className="pointer-events-none absolute z-10 max-w-[200px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-lg"
+            />
+            {error ? (
+              <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-slate-600">{error}</div>
+            ) : null}
+            {!error && !ready ? (
+              <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-slate-600">
+                Loading map…
               </div>
+            ) : null}
+          </div>
 
-              <div className="flex flex-col gap-3">
-                {branchesToShow.map((b) => {
-                  const pal = BRANCH_PALETTE[b]
-                  const zones = branchZones[b] ?? []
-                  const count = PROVINCES.filter((p) => p.branch === b).length
-                  return (
-                    <div key={b} className="rounded-xl border border-slate-200 bg-white p-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2.5 w-2.5 rounded-sm" style={{ background: pal?.base ?? "#94a3b8" }} />
-                        <div className="text-sm font-semibold text-slate-900">{BRANCH_LABEL[b] ?? b}</div>
-                        <div className="ml-auto text-xs text-slate-500 tabular-nums">{count} prov.</div>
-                      </div>
-                      <div className="mt-3 flex flex-col gap-1.5">
-                        {zones.map((z, idx) => {
-                          const shade = pal?.shades[Math.min(idx + 1, (pal?.shades.length ?? 1) - 1)] ?? "#94a3b8"
-                          const zoneCount = PROVINCES.filter((p) => p.zone === z).length
-                          return (
-                            <div key={z} className="flex items-center gap-2 text-xs">
-                              <div className="h-2 w-2 rounded-sm" style={{ background: shade }} />
-                              <div className="flex-1 text-slate-600">{shortZone(z)}</div>
-                              <div className="text-slate-400 tabular-nums">{zoneCount}</div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="text-sm font-semibold text-slate-900">Branch breakdown</div>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {branchBreakdown.map((b) => {
+                const pal = BRANCH_PALETTE[b.branch]
+                return (
+                  <div key={b.branch} className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2">
+                    <div className="h-2.5 w-2.5 rounded-sm" style={{ background: pal?.base ?? "#94a3b8" }} />
+                    <div className="text-sm font-semibold text-slate-800">{BRANCH_LABEL[b.branch] ?? b.branch}</div>
+                    <div className="ml-auto text-xs text-slate-500 tabular-nums">{b.count}</div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
