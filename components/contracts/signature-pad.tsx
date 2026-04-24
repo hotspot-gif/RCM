@@ -33,13 +33,34 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
     const resize = () => {
       const rect = canvas.getBoundingClientRect()
       const dpr = window.devicePixelRatio || 1
-      canvas.width = rect.width * dpr
-      canvas.height = rect.height * dpr
+      
+      // Only resize if the physical dimensions actually changed to avoid clearing on mobile scroll/address bar toggle
+      const newWidth = Math.floor(rect.width * dpr)
+      const newHeight = Math.floor(rect.height * dpr)
+      
+      if (canvas.width === newWidth && canvas.height === newHeight) return
+
+      // Save the current content before resizing
+      const tempCanvas = document.createElement("canvas")
+      tempCanvas.width = canvas.width
+      tempCanvas.height = canvas.height
+      const tempCtx = tempCanvas.getContext("2d")
+      if (tempCtx) {
+        tempCtx.drawImage(canvas, 0, 0)
+      }
+
+      canvas.width = newWidth
+      canvas.height = newHeight
       ctx.scale(dpr, dpr)
       ctx.lineCap = "round"
       ctx.lineJoin = "round"
       ctx.strokeStyle = "#000080" // Navy blue for a more natural ink look
       ctx.lineWidth = 1.8
+
+      // Restore the content if it wasn't empty
+      if (tempCtx) {
+        ctx.drawImage(tempCanvas, 0, 0, rect.width, rect.height)
+      }
     }
 
     resize()

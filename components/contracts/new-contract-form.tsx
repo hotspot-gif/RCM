@@ -56,6 +56,24 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
+
+    const mobileClean = values.mobile_number.replace(/\D/g, "")
+    const landlineClean = values.landline_number.replace(/\D/g, "")
+    const postCodeClean = values.post_code.replace(/\D/g, "")
+
+    if (mobileClean.length !== 10) {
+      toast.error("Mobile number must be exactly 10 digits")
+      return
+    }
+    if (landlineClean && landlineClean.length !== 10) {
+      toast.error("Landline number must be exactly 10 digits")
+      return
+    }
+    if (postCodeClean.length !== 5) {
+      toast.error("Post code must be exactly 5 digits")
+      return
+    }
+
     startTransition(async () => {
       const res = await createContractAction({
         company_name: values.company_name.trim(),
@@ -66,9 +84,9 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
         street: values.street.trim(),
         house_number: values.house_number.trim(),
         city: values.city.trim(),
-        post_code: values.post_code.trim(),
-        landline_number: values.landline_number.trim() || null,
-        mobile_number: values.mobile_number.trim(),
+        post_code: postCodeClean,
+        landline_number: landlineClean ? `+39${landlineClean}` : null,
+        mobile_number: `+39${mobileClean}`,
         email: values.email.trim(),
         branch: values.branch || null,
         zone: values.zone || null,
@@ -140,7 +158,11 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
         <Field label="Post code" required>
           <Input
             value={values.post_code}
-            onChange={(e) => update("post_code", e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, "").slice(0, 5)
+              update("post_code", v)
+            }}
+            placeholder="5 digits"
             required
           />
         </Field>
@@ -155,19 +177,33 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Field label="Mobile number" required>
-          <Input
-            type="tel"
-            value={values.mobile_number}
-            onChange={(e) => update("mobile_number", e.target.value)}
-            required
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">+39</span>
+            <Input
+              type="tel"
+              value={values.mobile_number}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 10)
+                update("mobile_number", v)
+              }}
+              placeholder="10 digits"
+              required
+            />
+          </div>
         </Field>
         <Field label="Landline number">
-          <Input
-            type="tel"
-            value={values.landline_number}
-            onChange={(e) => update("landline_number", e.target.value)}
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">+39</span>
+            <Input
+              type="tel"
+              value={values.landline_number}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 10)
+                update("landline_number", v)
+              }}
+              placeholder="10 digits"
+            />
+          </div>
         </Field>
         <Field label="Email" required className="md:col-span-2">
           <Input
