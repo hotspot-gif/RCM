@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { GitBranch, Layers3, MapPinned } from "lucide-react"
 
 declare global {
   interface Window {
@@ -353,6 +354,12 @@ export function BranchCoverageMap() {
     })
   }, [branches])
 
+  const tileAccent = {
+    branches: "#21264E",
+    zones: "#00D7FF",
+    provinces: "#08DC7D",
+  }
+
   return (
     <Card className="border-none bg-white shadow-sm ring-1 ring-brand-navy/5">
       <CardHeader className="pb-4">
@@ -363,22 +370,57 @@ export function BranchCoverageMap() {
       </CardHeader>
       <CardContent className="pt-0">
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-xs font-semibold text-slate-500">Branches</div>
-              <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">8</div>
-              <div className="mt-1 text-sm text-slate-600">North · Centre · South · Islands</div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-xs font-semibold text-slate-500">Zones</div>
-              <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">30</div>
-              <div className="mt-1 text-sm text-slate-600">Across all branches</div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-xs font-semibold text-slate-500">Provinces</div>
-              <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">107</div>
-              <div className="mt-1 text-sm text-slate-600">Full national coverage</div>
-            </div>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+            <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-navy/15">
+              <div className="absolute top-0 h-1.5 w-full" style={{ background: tileAccent.branches }} />
+              <CardHeader className="pb-4">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy shadow-inner transition-transform group-hover:scale-110"
+                  style={{ color: tileAccent.branches }}
+                >
+                  <GitBranch className="h-7 w-7" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-brand-navy">Branches</CardTitle>
+                <CardDescription className="text-slate-500">North · Centre · South · Islands</CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto pt-0">
+                <div className="text-4xl font-extrabold tracking-tight text-brand-navy tabular-nums">8</div>
+              </CardContent>
+            </Card>
+
+            <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-navy/15">
+              <div className="absolute top-0 h-1.5 w-full" style={{ background: tileAccent.zones }} />
+              <CardHeader className="pb-4">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy shadow-inner transition-transform group-hover:scale-110"
+                  style={{ color: tileAccent.zones }}
+                >
+                  <Layers3 className="h-7 w-7" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-brand-navy">Zones</CardTitle>
+                <CardDescription className="text-slate-500">Across all branches</CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto pt-0">
+                <div className="text-4xl font-extrabold tracking-tight text-brand-navy tabular-nums">30</div>
+              </CardContent>
+            </Card>
+
+            <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-navy/15">
+              <div className="absolute top-0 h-1.5 w-full" style={{ background: tileAccent.provinces }} />
+              <CardHeader className="pb-4">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy shadow-inner transition-transform group-hover:scale-110"
+                  style={{ color: tileAccent.provinces }}
+                >
+                  <MapPinned className="h-7 w-7" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-brand-navy">Provinces</CardTitle>
+                <CardDescription className="text-slate-500">Full national coverage</CardDescription>
+              </CardHeader>
+              <CardContent className="mt-auto pt-0">
+                <div className="text-4xl font-extrabold tracking-tight text-brand-navy tabular-nums">107</div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
