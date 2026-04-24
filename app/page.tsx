@@ -71,7 +71,7 @@ export default async function HomePage() {
       </section>
 
       {/* Hub Grid */}
-      <section className="mx-auto max-w-7xl px-6 py-24 lg:px-8">
+      <section className="mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-20">
         <div className="mb-16 flex flex-col items-center justify-between gap-4 md:flex-row md:items-end">
           <div className="text-center md:text-left">
             <h2 className="text-3xl font-bold tracking-tight text-brand-navy">Core Resources</h2>

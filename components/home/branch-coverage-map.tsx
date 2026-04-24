@@ -363,9 +363,9 @@ export function BranchCoverageMap() {
   return (
     <Card className="border-none bg-white shadow-sm ring-1 ring-brand-navy/5">
       <CardHeader className="pb-4">
-        <CardTitle className="text-2xl font-bold text-brand-navy">Territory Coverage Map</CardTitle>
+        <CardTitle className="text-2xl font-bold text-brand-navy">Italy Distribution Network</CardTitle>
         <CardDescription className="text-slate-500">
-          Branch-wise coverage across Italy provinces. Click a province or choose a branch to filter.
+          A clear view of how our 8 branches manage national distribution across provinces.
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
