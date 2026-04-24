@@ -165,7 +165,7 @@ export async function buildContractPdf({
   let y3 = drawBlocks(p3, page3Body, PAGE_H - MARGIN_TOP, { paragraphGap: 4 })
   y3 -= 6
   y3 = drawSimPriceTable(p3, font, fontBold, y3)
-  y3 -= 10
+  y3 -= 40
   y3 = drawBlocks(p3, page3Outro, y3, { paragraphGap: 4 })
   y3 -= 8
   drawFourPartySignatureBlock(p3, font, retailerSig, staffSig, y3, fields, staffName)
@@ -301,7 +301,6 @@ function drawFourPartySignatureBlock(
     { label: "Rivenditore", image: retailerSig, signedBy: f.contactPerson },
     { label: "Staff", image: staffSig, signedBy: staffName },
     { label: "Office / Hotspot Manager", image: null, signedBy: "" },
-    { label: "Fornitore", image: staffSig, signedBy: "Deivendran Subramaniam" },
   ]
 
   let y = startY
@@ -444,7 +443,7 @@ function drawPage4RegistrationForm(
   const tableX = MARGIN_X + 30
   const tableW = PAGE_W - 2 * (MARGIN_X + 30)
   const col1W = 180
-  const rowH = 22
+  const rowH = 30
 
   const rows: Array<[string, string]> = [
     ["Nome*", f.firstName],
@@ -477,14 +476,14 @@ function drawPage4RegistrationForm(
     })
     page.drawText(label, {
       x: tableX + 8,
-      y: ry - rowH + 7,
+      y: ry - rowH + 11,
       size: 10,
       font: fontBold,
       color: BLACK,
     })
     page.drawText(value, {
       x: tableX + col1W + 8,
-      y: ry - rowH + 7,
+      y: ry - rowH + 11,
       size: 10,
       font,
       color: BLACK,
@@ -493,7 +492,7 @@ function drawPage4RegistrationForm(
   }
 
   // ----- Signature rows -----
-  ry -= 28
+  ry -= 60
   const sigLineLen = 180
   const dateLineLen = 100
 
@@ -613,7 +612,6 @@ function drawFinalSignatureBlock(
 ) {
   const rows: Array<{ label: string; image: PDFImage | null; signedBy: string }> = [
     { label: "Rivenditore", image: retailerSig, signedBy: f.contactPerson },
-    { label: "Fornitore", image: staffSig, signedBy: staffName || "Deivendran Subramaniam" },
   ]
   let y = startY
   const rowH = 54
