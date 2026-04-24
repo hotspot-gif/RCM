@@ -179,7 +179,7 @@ export default async function HomePage() {
             </CardHeader>
             <CardContent className="mt-auto flex flex-col gap-4 pt-0">
               <Link
-                href="https://github.com/hotspot-gif/STAFF-INCENTIVE"
+                href="https://hotspot-gif.github.io/STAFF-INCENTIVE/"
                 target="_blank"
                 className="flex items-center justify-between rounded-lg bg-brand-navy p-3 text-brand-cream transition-opacity hover:opacity-90"
               >
