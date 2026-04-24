@@ -253,7 +253,7 @@ export async function buildContractPdf({
   y3 -= 40
   y3 = drawBlocks(p3, page3Outro, y3, 3, { paragraphGap: 4 })
   y3 -= 8
-  drawFourPartySignatureBlock(p3, font, retailerSig, staffSig, y3, fields, staffName)
+  drawFourPartySignatureBlock(p3, font, fontBold, retailerSig, staffSig, y3, fields, staffName)
   drawPageFooter(p3, 3)
 
   // ---------- PAGE 4: Modulo di Registrazione Rivenditore ----------
@@ -281,7 +281,7 @@ export async function buildContractPdf({
   })
   // Place signature block at a fixed location near bottom.
   const sigTop = Math.min(y7 - 20, MARGIN_BOTTOM + 120)
-  drawFinalSignatureBlock(p7, font, retailerSig, staffSig, sigTop, fields, staffName)
+  drawFinalSignatureBlock(p7, font, fontBold, retailerSig, staffSig, sigTop, fields, staffName)
   drawPageFooter(p7, 7)
 
   return await pdf.save()
@@ -372,6 +372,7 @@ function drawSimPriceTable(
 function drawFourPartySignatureBlock(
   page: PDFPage,
   font: PDFFont,
+  fontBold: PDFFont,
   retailerSig: PDFImage | null,
   staffSig: PDFImage | null,
   startY: number,
@@ -717,6 +718,7 @@ function drawPage4RegistrationForm(
 function drawFinalSignatureBlock(
   page: PDFPage,
   font: PDFFont,
+  fontBold: PDFFont,
   retailerSig: PDFImage | null,
   staffSig: PDFImage | null,
   startY: number,
