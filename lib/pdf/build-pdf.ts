@@ -163,7 +163,7 @@ export async function buildContractPdf({
 
   // ---------- PAGE 2 ----------
   const p2 = pdf.addPage([PAGE_W, PAGE_H])
-  drawBlocks(p2, page2Body, PAGE_H - MARGIN_TOP, { paragraphGap: 4 })
+  drawBlocks(p2, page2Body, PAGE_H - 40, { paragraphGap: 2 })
   drawPageFooter(p2, 2)
 
   // ---------- PAGE 3: clauses + SIM price table + signatures ----------
