@@ -116,9 +116,9 @@ export default async function HomePage() {
             <CardContent className="mt-auto flex flex-col gap-6 pt-0">
               <ul className="space-y-3">
                 {[
-                  "KPI & Past year KPI analysis",
-                  "Coverage & Distribution details",
-                  "Current month target vs actual"
+                  "Annual KPI & Retailer Incentive Analysis",
+                  "Retailer Coverage & UAO Monitoring",
+                  "CM Target vs Actual Performance Analysis"
                 ].map((item) => (
                   <li key={item} className="flex items-start gap-3 text-sm text-slate-600">
                     <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" />
