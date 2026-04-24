@@ -60,7 +60,25 @@ export async function buildContractPdf({
   const lycaLogo = lycaLogoPng ? await pdf.embedPng(lycaLogoPng) : null
   const retailerSig = retailerSignaturePng ? await pdf.embedPng(retailerSignaturePng) : null
   const staffSig = staffSignaturePng ? await pdf.embedPng(staffSignaturePng) : null
-  const staffName = staffSignerName?.trim() || "Staff"
+
+  // Ensure retailer name (companyName) and staff name are uppercase as requested
+  if (fields.companyName) {
+    fields.companyName = fields.companyName.toUpperCase()
+  }
+  if (fields.contactPerson) {
+    fields.contactPerson = fields.contactPerson.toUpperCase()
+  }
+  if (fields.firstName) {
+    fields.firstName = fields.firstName.toUpperCase()
+  }
+  if (fields.surname) {
+    fields.surname = fields.surname.toUpperCase()
+  }
+  if (fields.shopName) {
+    fields.shopName = fields.shopName.toUpperCase()
+  }
+
+  const staffName = (staffSignerName?.trim() || "Staff").toUpperCase()
 
   const totalPages = 7
 
@@ -83,6 +101,11 @@ export async function buildContractPdf({
     return lines
   }
 
+  interface Segment {
+    text: string
+    bold: boolean
+  }
+
   /**
    * Draws blocks sequentially. Stops before the page footer so body copy never
    * bleeds into the page number. Returns the final Y (for the caller to append
@@ -92,34 +115,90 @@ export async function buildContractPdf({
     page: PDFPage,
     blocks: Block[],
     startY: number,
+    pageNumber: number,
     opts?: { paragraphGap?: number; bottomLimit?: number },
   ) => {
     let y = startY
     const maxW = PAGE_W - MARGIN_X * 2
     const defaultGap = opts?.paragraphGap ?? 5
     const bottom = opts?.bottomLimit ?? MARGIN_BOTTOM
+    const size = BODY_SIZE
+
     for (const b of blocks) {
-      const f = b.bold ? fontBold : font
-      const size = BODY_SIZE
-      if (!b.text) {
+      let text = b.text
+      if (!text) {
         y -= LINE_HEIGHT / 2
         continue
       }
-      
+
       // Additional space before specific headers
-      if (b.text === "IL PRESENTE CONTRATTO È ORA MODIFICATO COME SEGUE:") {
+      if (text === "IL PRESENTE CONTRATTO È ORA MODIFICATO COME SEGUE:") {
         y -= 10
       }
 
-      const lines = wrap(b.text, maxW, f, size)
+      // Split text into segments (bold vs normal)
+      const segments: Segment[] = []
+      if (pageNumber === 4) {
+        segments.push({ text, bold: b.bold || false })
+      } else {
+        const parts = text.split(/(\[\[B\]\].*?\[\[B\]\])/g)
+        for (const p of parts) {
+          if (p.startsWith("[[B]]") && p.endsWith("[[B]]")) {
+            segments.push({ text: p.replace(/\[\[B\]\]/g, ""), bold: true })
+          } else if (p) {
+            segments.push({ text: p, bold: b.bold || false })
+          }
+        }
+      }
+
+      // Wrap lines considering mixed fonts
+      const lines: Segment[][] = []
+      let currentLine: Segment[] = []
+      let currentLineWidth = 0
+
+      for (const seg of segments) {
+        const f = seg.bold ? fontBold : font
+        const words = seg.text.split(/(\s+)/) // Keep whitespace
+        
+        for (const w of words) {
+          const wWidth = f.widthOfTextAtSize(w, size)
+          if (currentLineWidth + wWidth > maxW && currentLine.length > 0 && w.trim()) {
+            lines.push(currentLine)
+            currentLine = []
+            currentLineWidth = 0
+            // If it's a space at the start of a new line, skip it
+            if (!w.trim()) continue
+          }
+          
+          // Add word to current line
+          if (currentLine.length > 0 && currentLine[currentLine.length - 1].bold === seg.bold) {
+            currentLine[currentLine.length - 1].text += w
+          } else {
+            currentLine.push({ text: w, bold: seg.bold })
+          }
+          currentLineWidth += wWidth
+        }
+      }
+      if (currentLine.length > 0) lines.push(currentLine)
+
+      // Draw lines
       for (const line of lines) {
-        if (y < bottom) return y // stop — caller controls overflow
+        if (y < bottom) return y
         let x = MARGIN_X
         if (b.align === "center") {
-          const w = f.widthOfTextAtSize(line, size)
-          x = (PAGE_W - w) / 2
+          let lineW = 0
+          for (const seg of line) {
+            const f = seg.bold ? fontBold : font
+            lineW += f.widthOfTextAtSize(seg.text, size)
+          }
+          x = (PAGE_W - lineW) / 2
         }
-        page.drawText(line, { x, y, size, font: f, color: BLACK })
+
+        for (const seg of line) {
+          const f = seg.bold ? fontBold : font
+          page.drawText(seg.text, { x, y, size, font: f, color: BLACK })
+          x += f.widthOfTextAtSize(seg.text, size)
+        }
         y -= LINE_HEIGHT
       }
       y -= defaultGap
@@ -156,23 +235,23 @@ export async function buildContractPdf({
     })
   }
   let y1 = PAGE_H - MARGIN_TOP - (usLogo ? 72 : 20)
-  y1 = drawBlocks(p1, page1Intro(fields), y1, { paragraphGap: 6 })
+  y1 = drawBlocks(p1, page1Intro(fields), y1, 1, { paragraphGap: 6 })
   y1 -= 4
-  drawBlocks(p1, page1Body, y1, { paragraphGap: 4 })
+  drawBlocks(p1, page1Body, y1, 1, { paragraphGap: 4 })
   drawPageFooter(p1, 1)
 
   // ---------- PAGE 2 ----------
   const p2 = pdf.addPage([PAGE_W, PAGE_H])
-  drawBlocks(p2, page2Body, PAGE_H - 40, { paragraphGap: 2 })
+  drawBlocks(p2, page2Body, PAGE_H - 40, 2, { paragraphGap: 2 })
   drawPageFooter(p2, 2)
 
   // ---------- PAGE 3: clauses + SIM price table + signatures ----------
   const p3 = pdf.addPage([PAGE_W, PAGE_H])
-  let y3 = drawBlocks(p3, page3Body, PAGE_H - MARGIN_TOP, { paragraphGap: 4 })
+  let y3 = drawBlocks(p3, page3Body, PAGE_H - MARGIN_TOP, 3, { paragraphGap: 4 })
   y3 -= 6
   y3 = drawSimPriceTable(p3, font, fontBold, y3)
   y3 -= 40
-  y3 = drawBlocks(p3, page3Outro, y3, { paragraphGap: 4 })
+  y3 = drawBlocks(p3, page3Outro, y3, 3, { paragraphGap: 4 })
   y3 -= 8
   drawFourPartySignatureBlock(p3, font, retailerSig, staffSig, y3, fields, staffName)
   drawPageFooter(p3, 3)
@@ -184,19 +263,19 @@ export async function buildContractPdf({
 
   // ---------- PAGE 5 ----------
   const p5 = pdf.addPage([PAGE_W, PAGE_H])
-  drawBlocks(p5, page5Body(fields), PAGE_H - 40, { paragraphGap: 8 })
+  drawBlocks(p5, page5Body(fields), PAGE_H - 40, 5, { paragraphGap: 8 })
   drawPageFooter(p5, 5)
 
   // ---------- PAGE 6 ----------
   const p6 = pdf.addPage([PAGE_W, PAGE_H])
-  drawBlocks(p6, page6Body, PAGE_H - MARGIN_TOP, { paragraphGap: 4 })
+  drawBlocks(p6, page6Body, PAGE_H - MARGIN_TOP, 6, { paragraphGap: 4 })
   drawPageFooter(p6, 6)
 
   // ---------- PAGE 7 ----------
   const p7 = pdf.addPage([PAGE_W, PAGE_H])
   // Reserve 120pt at the bottom for the signature block so body text never overlaps.
   const p7BottomReserve = MARGIN_BOTTOM + 130
-  let y7 = drawBlocks(p7, page7Body, PAGE_H - MARGIN_TOP, {
+  let y7 = drawBlocks(p7, page7Body, PAGE_H - MARGIN_TOP, 7, {
     paragraphGap: 4,
     bottomLimit: p7BottomReserve,
   })
@@ -356,7 +435,7 @@ function drawFourPartySignatureBlock(
 
     // Firmato da — printed name above the line
     if (entry.signedBy) {
-      page.drawText(entry.signedBy, {
+      page.drawText(entry.signedBy.toUpperCase(), {
         x: col2X + 4,
         y: lineY + 2,
         size: 9, // Reduced from 10 to match other pages and look more natural
@@ -368,7 +447,7 @@ function drawFourPartySignatureBlock(
         x: col3X + 4,
         y: lineY + 2,
         size: 9, // Reduced from 10
-        font,
+        font: fontBold,
         color: BLACK,
       })
     }
@@ -691,7 +770,7 @@ function drawFinalSignatureBlock(
         opacity: 0.95,
       })
     }
-    page.drawText(row.signedBy, {
+    page.drawText(row.signedBy.toUpperCase(), {
       x: col2X + 4,
       y: lineY + 2,
       size: 10,
@@ -702,7 +781,7 @@ function drawFinalSignatureBlock(
       x: col3X + 4,
       y: lineY + 2,
       size: 10,
-      font,
+      font: fontBold,
       color: BLACK,
     })
 
