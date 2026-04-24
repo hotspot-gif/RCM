@@ -3,6 +3,7 @@ import { ExternalLink, LayoutDashboard, FileText, BarChart3, Users2, FileSignatu
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
+import { FieldIQIcon } from "@/components/dashboard/field-iq-icon"
 import Image from "next/image"
 
 export default async function HomePage() {
@@ -106,19 +107,7 @@ export default async function HomePage() {
             <div className="absolute top-0 h-1.5 w-full bg-brand-cyan" />
             <CardHeader className="pb-4">
               <div className="mb-4 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-brand-navy shadow-inner group-hover:scale-110 transition-transform">
-                <Image 
-                  src="/field-iq-icon.png" 
-                  alt="Field IQ" 
-                  width={56} 
-                  height={56}
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    // Fallback to icon if image not found
-                    const target = e.target as HTMLElement;
-                    target.style.display = 'none';
-                    target.parentElement?.insertAdjacentHTML('afterbegin', '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3 text-brand-cyan"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>');
-                  }}
-                />
+                <FieldIQIcon />
               </div>
               <CardTitle className="text-2xl font-bold text-brand-navy">Field IQ</CardTitle>
               <CardDescription className="text-slate-500">Performance Analytics Dashboard</CardDescription>
