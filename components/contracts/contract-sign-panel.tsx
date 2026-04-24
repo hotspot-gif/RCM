@@ -89,14 +89,14 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
   return (
     <Card className="border-2 shadow-lg">
       <CardHeader className="border-b bg-muted/30">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <CardTitle className="text-xl">Contract Finalization</CardTitle>
             <CardDescription>
               {step === 1 ? "Step 1: Retailer Acceptance" : "Step 2: Staff Verification"}
             </CardDescription>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 sm:shrink-0">
             <div className={`h-2 w-8 rounded-full ${step >= 1 ? "bg-brand-navy" : "bg-muted"}`} />
             <div className={`h-2 w-8 rounded-full ${step >= 2 ? "bg-brand-navy" : "bg-muted"}`} />
           </div>
@@ -125,8 +125,8 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
               </span>
             </label>
 
-            <div className="flex justify-end pt-2">
-              <Button onClick={onNext} className="px-8 bg-brand-navy hover:bg-brand-navy/90">
+            <div className="flex flex-col pt-2 sm:flex-row sm:justify-end">
+              <Button onClick={onNext} className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8">
                 Next Step
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -145,12 +145,16 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
               description="Staff / Hotspot Manager signs here to finalize the contract."
             />
 
-            <div className="flex justify-between pt-2">
-              <Button variant="outline" onClick={() => setStep(1)} disabled={pending}>
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+              <Button variant="outline" onClick={() => setStep(1)} disabled={pending} className="w-full sm:w-auto">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Retailer
               </Button>
-              <Button onClick={onSubmit} disabled={pending} className="px-8 bg-brand-green text-brand-navy hover:bg-brand-green/90 font-bold">
+              <Button
+                onClick={onSubmit}
+                disabled={pending}
+                className="w-full bg-brand-green font-bold text-brand-navy hover:bg-brand-green/90 sm:w-auto sm:px-8"
+              >
                 {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
                 Complete & Generate PDF
               </Button>
