@@ -106,6 +106,23 @@ export default async function ContractDetailPage({
         </Card>
 
         <div className="lg:col-span-2 flex flex-col gap-6">
+          {contract.status !== "SIGNED" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Draft Actions</CardTitle>
+                <CardDescription>
+                  Download a preview of the contract before signing.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ContractActions
+                  contractId={contract.id}
+                  status={contract.status}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {contract.status !== "SIGNED" ? (
             <ContractSignPanel contractId={contract.id} />
           ) : (

@@ -188,7 +188,7 @@ export default async function HomePage() {
               className="h-7 w-auto object-contain grayscale opacity-50"
             />
             <p className="text-sm text-slate-400">
-              © {new Date().getFullYear()} Universal Service 2006. All rights reserved. Professional Staff Hub.
+              Contact your administrator to obtain access credentials for the Field IQ and RCM applications.
             </p>
           </div>
         </div>

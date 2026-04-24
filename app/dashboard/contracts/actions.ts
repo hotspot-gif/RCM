@@ -338,3 +338,76 @@ export async function sendContractEmailAction(
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
   }
 }
+
+/**
+ * Generate a draft PDF (no signatures) and return it as a base64 string
+ * for client-side download.
+ */
+export async function getDraftContractPdfAction(
+  id: string,
+): Promise<ActionResult<{ base64: string; filename: string }>> {
+  try {
+    await requireUser()
+    const supabase = await createClient()
+
+    const { data: contractRow, error: contractErr } = await supabase
+      .from("contracts")
+      .select("*")
+      .eq("id", id)
+      .single()
+
+    if (contractErr || !contractRow) {
+      return { ok: false, error: contractErr?.message || "Contract not found" }
+    }
+    const contract = contractRow as Contract
+
+    const loadPng = async (name: string): Promise<Uint8Array | null> => {
+      try {
+        const buf = await readFile(path.join(process.cwd(), "public", name))
+        return new Uint8Array(buf)
+      } catch {
+        return null
+      }
+    }
+    const [usLogoBytes, lycaLogoBytes] = await Promise.all([
+      loadPng("uslogo.png"),
+      loadPng("lyca-logo.png"),
+    ])
+
+    const fullName = `${contract.contact_first_name} ${contract.contact_last_name}`.trim()
+    const fields: ContractFields = {
+      companyName: contract.company_name,
+      vatNumber: contract.vat_number,
+      address: `${contract.street}, ${contract.house_number}, ${contract.post_code} ${contract.city}`,
+      mobileNumber: contract.mobile_number,
+      landlineNumber: contract.landline_number ?? "",
+      contactPerson: fullName,
+      surname: contract.contact_last_name,
+      firstName: contract.contact_first_name,
+      shopName: contract.shop_name,
+      shopAddress: `${contract.street} ${contract.house_number}, ${contract.post_code} ${contract.city}`,
+      street: contract.street,
+      houseNumber: contract.house_number,
+      city: contract.city,
+      postCode: contract.post_code,
+      email: contract.email,
+      date: new Date().toLocaleDateString("it-IT"),
+    }
+
+    const pdfBytes = await buildContractPdf({
+      fields,
+      retailerSignaturePng: null,
+      staffSignaturePng: null,
+      usLogoPng: usLogoBytes,
+      lycaLogoPng: lycaLogoBytes,
+      staffSignerName: "DRAFT",
+    })
+
+    const base64 = Buffer.from(pdfBytes).toString("base64")
+    const filename = `DRAFT-${contract.company_name.replace(/\s+/g, "-")}.pdf`
+
+    return { ok: true, data: { base64, filename } }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}

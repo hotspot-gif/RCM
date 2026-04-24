@@ -119,8 +119,14 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
         </Field>
         <Field label="VAT number" required>
           <Input
+            type="tel"
+            inputMode="numeric"
             value={values.vat_number}
-            onChange={(e) => update("vat_number", e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, "").slice(0, 11)
+              update("vat_number", v)
+            }}
+            placeholder="P.IVA (max 11 digits)"
             required
           />
         </Field>
