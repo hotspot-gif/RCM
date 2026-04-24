@@ -156,7 +156,7 @@ export default async function HomePage() {
                   <ExternalLink className="h-4 w-4 text-slate-400" />
                 </Link>
                 <Link 
-                  href="https://github.com/hotspot-gif/spl-kb" 
+                  href="https://hotspot-gif.github.io/spl-kb/" 
                   target="_blank"
                   className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3 transition-colors hover:bg-brand-yellow/5 hover:border-brand-yellow/20"
                 >
