@@ -29,7 +29,13 @@ export function ContractActions({
         toast.error(res.error)
         return
       }
-      window.open(res.data!.url, "_blank", "noopener,noreferrer")
+      
+      const link = document.createElement("a")
+      link.href = res.data!.url
+      link.setAttribute("download", "")
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
     })
   }
 

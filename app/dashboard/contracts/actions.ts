@@ -249,7 +249,9 @@ export async function getContractPdfUrlAction(
     }
     const { data, error: urlErr } = await supabase.storage
       .from("contracts")
-      .createSignedUrl(row.pdf_path, 60 * 60)
+      .createSignedUrl(row.pdf_path, 60 * 60, {
+        download: true,
+      })
     if (urlErr || !data) {
       return { ok: false, error: urlErr?.message || "Could not create URL" }
     }
