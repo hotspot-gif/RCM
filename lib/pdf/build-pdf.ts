@@ -301,6 +301,7 @@ function drawFourPartySignatureBlock(
     { label: "Rivenditore", image: retailerSig, signedBy: f.contactPerson },
     { label: "Staff", image: staffSig, signedBy: staffName },
     { label: "Office / Hotspot Manager", image: null, signedBy: "" },
+    { label: "Fornitore", image: null, signedBy: "" },
   ]
 
   let y = startY
@@ -334,15 +335,16 @@ function drawFourPartySignatureBlock(
 
     if (entry.image) {
       const maxW = lineLen - 10
-      const maxH = 22
+      const maxH = 34 // Increased height for more natural scale
       const ratio = Math.min(maxW / entry.image.width, maxH / entry.image.height)
       const w = entry.image.width * ratio
       const h = entry.image.height * ratio
       page.drawImage(entry.image, {
         x: col1X + (lineLen - w) / 2,
-        y: lineY + 2,
+        y: lineY + 1,
         width: w,
         height: h,
+        opacity: 0.95, // Slight transparency for ink-on-paper look
       })
     }
 
@@ -513,15 +515,16 @@ function drawPage4RegistrationForm(
   })
   if (retailerSig) {
     const maxW = sigLineLen - 10
-    const maxH = 30
+    const maxH = 44 // Larger for registration form
     const ratio = Math.min(maxW / retailerSig.width, maxH / retailerSig.height)
     const w = retailerSig.width * ratio
     const h = retailerSig.height * ratio
     page.drawImage(retailerSig, {
       x: sigLineX + (sigLineLen - w) / 2,
-      y: sigLineY + 2,
+      y: sigLineY + 1,
       width: w,
       height: h,
+      opacity: 0.95,
     })
   }
   page.drawText("Data:", {
@@ -612,6 +615,7 @@ function drawFinalSignatureBlock(
 ) {
   const rows: Array<{ label: string; image: PDFImage | null; signedBy: string }> = [
     { label: "Rivenditore", image: retailerSig, signedBy: f.contactPerson },
+    { label: "Fornitore", image: null, signedBy: "" },
   ]
   let y = startY
   const rowH = 54
@@ -644,15 +648,16 @@ function drawFinalSignatureBlock(
 
     if (row.image) {
       const maxW = lineLen - 10
-      const maxH = 28
+      const maxH = 40 // Larger final signature
       const ratio = Math.min(maxW / row.image.width, maxH / row.image.height)
       const w = row.image.width * ratio
       const h = row.image.height * ratio
       page.drawImage(row.image, {
         x: col1X + (lineLen - w) / 2,
-        y: lineY + 2,
+        y: lineY + 1,
         width: w,
         height: h,
+        opacity: 0.95,
       })
     }
     page.drawText(row.signedBy, {

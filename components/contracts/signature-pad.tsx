@@ -38,8 +38,8 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
       ctx.scale(dpr, dpr)
       ctx.lineCap = "round"
       ctx.lineJoin = "round"
-      ctx.strokeStyle = "#21264e"
-      ctx.lineWidth = 2
+      ctx.strokeStyle = "#000080" // Navy blue for a more natural ink look
+      ctx.lineWidth = 1.8
     }
 
     resize()
