@@ -8,6 +8,7 @@ import {
   FileText,
   PlusSquare,
   Users,
+  UserCircle,
 } from "lucide-react"
 import {
   Sidebar,
@@ -40,6 +41,12 @@ export function AppSidebar({ user }: { user: AppUser }) {
       label: "Users",
       icon: Users,
       show: user.role === "ADMIN",
+    },
+    {
+      href: "/dashboard/profile",
+      label: "Profile Settings",
+      icon: UserCircle,
+      show: true,
     },
   ]
 
