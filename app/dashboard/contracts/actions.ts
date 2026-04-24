@@ -351,7 +351,7 @@ export async function getDraftContractPdfAction(
   id: string,
 ): Promise<ActionResult<{ base64: string; filename: string }>> {
   try {
-    await requireUser()
+    const user = await requireUser()
     const supabase = await createClient()
 
     const { data: contractRow, error: contractErr } = await supabase
@@ -404,11 +404,11 @@ export async function getDraftContractPdfAction(
       staffSignaturePng: null,
       usLogoPng: usLogoBytes,
       lycaLogoPng: lycaLogoBytes,
-      staffSignerName: "DRAFT",
+      staffSignerName: user.full_name,
     })
 
     const base64 = Buffer.from(pdfBytes).toString("base64")
-    const filename = `DRAFT-${contract.company_name.replace(/\s+/g, "-")}.pdf`
+    const filename = `${contract.shop_name} (Unsigned).pdf`
 
     return { ok: true, data: { base64, filename } }
   } catch (e) {
