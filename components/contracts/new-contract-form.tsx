@@ -169,7 +169,7 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
               const v = e.target.value.replace(/\D/g, "").slice(0, 5)
               update("post_code", v)
             }}
-            placeholder="5 digits"
+            placeholder="CAP"
             required
           />
         </Field>
@@ -193,7 +193,7 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
                 const v = e.target.value.replace(/\D/g, "").slice(0, 10)
                 update("mobile_number", v)
               }}
-              placeholder="10 digits"
+              placeholder="Mobile Number"
               required
             />
           </div>
@@ -208,7 +208,7 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
                 const v = e.target.value.replace(/\D/g, "").slice(0, 10)
                 update("landline_number", v)
               }}
-              placeholder="10 digits"
+              placeholder="Landline Number"
             />
           </div>
         </Field>

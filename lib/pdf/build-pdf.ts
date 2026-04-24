@@ -341,7 +341,7 @@ function drawFourPartySignatureBlock(
       const h = entry.image.height * ratio
       page.drawImage(entry.image, {
         x: col1X + (lineLen - w) / 2,
-        y: lineY + 1,
+        y: lineY - 3,
         width: w,
         height: h,
         opacity: 0.95, // Slight transparency for ink-on-paper look
@@ -352,7 +352,7 @@ function drawFourPartySignatureBlock(
     if (entry.signedBy) {
       page.drawText(entry.signedBy, {
         x: col2X + 4,
-        y: lineY + 4,
+        y: lineY + 2,
         size: 10,
         font,
         color: BLACK,
@@ -360,7 +360,7 @@ function drawFourPartySignatureBlock(
       // Data — filled with contract date when the row represents a signed party
       page.drawText(f.date, {
         x: col3X + 4,
-        y: lineY + 4,
+        y: lineY + 2,
         size: 10,
         font,
         color: BLACK,
@@ -531,7 +531,7 @@ function drawPage4RegistrationForm(
     const h = retailerSig.height * ratio
     page.drawImage(retailerSig, {
       x: sigLineX + (sigLineLen - w) / 2,
-      y: sigLineY + 1,
+      y: sigLineY - 3,
       width: w,
       height: h,
       opacity: 0.95,
@@ -553,7 +553,7 @@ function drawPage4RegistrationForm(
   })
   page.drawText(f.date, {
     x: dateLineX + 6,
-    y: ry,
+    y: ry - 1,
     size: 10,
     font,
     color: BLACK,
@@ -583,7 +583,7 @@ function drawPage4RegistrationForm(
     const h = staffSig.height * ratio
     page.drawImage(staffSig, {
       x: zLineX + (sigLineLen - w) / 2,
-      y: zLineY + 1,
+      y: zLineY - 3,
       width: w,
       height: h,
       opacity: 0.95,
@@ -679,7 +679,7 @@ function drawFinalSignatureBlock(
       const h = row.image.height * ratio
       page.drawImage(row.image, {
         x: col1X + (lineLen - w) / 2,
-        y: lineY + 1,
+        y: lineY - 3,
         width: w,
         height: h,
         opacity: 0.95,
@@ -687,14 +687,14 @@ function drawFinalSignatureBlock(
     }
     page.drawText(row.signedBy, {
       x: col2X + 4,
-      y: lineY + 4,
+      y: lineY + 2,
       size: 10,
       font,
       color: BLACK,
     })
     page.drawText(f.date, {
       x: col3X + 4,
-      y: lineY + 4,
+      y: lineY + 2,
       size: 10,
       font,
       color: BLACK,
