@@ -108,7 +108,7 @@ export async function buildContractPdf({
       
       // Additional space before specific headers
       if (b.text === "IL PRESENTE CONTRATTO È ORA MODIFICATO COME SEGUE:") {
-        y -= 15
+        y -= 10
       }
 
       const lines = wrap(b.text, maxW, f, size)
@@ -184,7 +184,7 @@ export async function buildContractPdf({
 
   // ---------- PAGE 5 ----------
   const p5 = pdf.addPage([PAGE_W, PAGE_H])
-  drawBlocks(p5, page5Body(fields), PAGE_H - MARGIN_TOP, { paragraphGap: 12 })
+  drawBlocks(p5, page5Body(fields), PAGE_H - 40, { paragraphGap: 8 })
   drawPageFooter(p5, 5)
 
   // ---------- PAGE 6 ----------
