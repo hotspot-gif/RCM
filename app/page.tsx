@@ -1,8 +1,9 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
-import { FileSignature, Shield, Users } from "lucide-react"
+import { ExternalLink, LayoutDashboard, FileText, BarChart3, Users2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
+import Image from "next/image"
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -10,76 +11,147 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user) {
-    redirect("/dashboard")
-  }
-
   return (
-    <main className="min-h-dvh bg-background text-foreground">
-      <header className="flex items-center justify-between px-6 py-5 md:px-10">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#21264e] text-[#fff7f2]">
-            <FileSignature className="h-5 w-5" aria-hidden="true" />
+    <main className="min-h-dvh bg-slate-50 text-foreground">
+      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+          <div className="flex items-center gap-4">
+            <Image 
+              src="https://cms-assets.ldsvcplatform.com/IT/s3fs-public/2023-09/home_logo.png"
+              alt="Universal Service Logo"
+              width={180} 
+              height={50} 
+              className="h-10 w-auto object-contain"
+            />
           </div>
-          <span className="text-sm font-semibold tracking-tight md:text-base">
-            Universal Service 2006 — Contracts
-          </span>
+          <div className="flex items-center gap-4">
+            {user ? (
+              <Button asChild variant="outline">
+                <Link href="/dashboard">Go to Dashboard</Link>
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href="/auth/login">Staff Login</Link>
+              </Button>
+            )}
+          </div>
         </div>
-        <Button asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
       </header>
 
-      <section className="mx-auto flex max-w-5xl flex-col items-center gap-8 px-6 pb-20 pt-10 text-center md:pt-16">
-        <span className="inline-flex items-center gap-2 rounded-full bg-[#ffc8b2] px-3 py-1 text-xs font-medium text-[#21264e]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#08dc7d]" aria-hidden="true" />
-          Retailer Contract Management System
-        </span>
-        <h1 className="text-balance text-4xl font-semibold tracking-tight md:text-6xl">
-          Generate, sign and dispatch retailer contracts in minutes.
-        </h1>
-        <p className="max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
-          A single dashboard for ADMIN, ASM and FSE teams to create distribution
-          contracts, collect digital signatures, and automatically email the signed
-          PDF to retailer and staff — with full branch and zone level control.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button asChild size="lg">
-            <Link href="/auth/login">Open dashboard</Link>
-          </Button>
+      <section className="mx-auto max-w-7xl px-6 py-12 md:py-20">
+        <div className="mb-12 text-center">
+          <h1 className="mb-4 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
+            Staff Information Hub
+          </h1>
+          <p className="mx-auto max-w-2xl text-lg text-slate-600">
+            Access all essential tools, incentive schemes, and performance dashboards in one place.
+          </p>
         </div>
 
-        <dl className="mt-10 grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
-          {[
-            {
-              icon: FileSignature,
-              title: "Pre-filled PDFs",
-              desc: "Retailer details are merged into the contract template instantly.",
-            },
-            {
-              icon: Shield,
-              title: "Role-based access",
-              desc: "ADMIN sees everything; ASM per branch; FSE per zone.",
-            },
-            {
-              icon: Users,
-              title: "Digital signatures",
-              desc: "Retailer and staff sign on any device and receive the PDF by email.",
-            },
-          ].map((f) => (
-            <div
-              key={f.title}
-              className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-5 text-left"
-            >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#245bc1] text-white">
-                <f.icon className="h-5 w-5" aria-hidden="true" />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Retailer Incentive Schemes */}
+          <Card className="flex flex-col transition-all hover:shadow-lg">
+            <CardHeader>
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                <LayoutDashboard className="h-6 w-6" />
               </div>
-              <dt className="text-sm font-semibold">{f.title}</dt>
-              <dd className="text-sm leading-relaxed text-muted-foreground">{f.desc}</dd>
-            </div>
-          ))}
-        </dl>
+              <CardTitle>Retailer Incentive Scheme</CardTitle>
+              <CardDescription>Guidelines and details for retailer rewards</CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto flex flex-col gap-3">
+              <Button asChild variant="outline" className="justify-between">
+                <Link href="https://hotspot-gif.github.io/std-kb/" target="_blank">
+                  Normal Scheme
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="justify-between">
+                <Link href="https://github.com/hotspot-gif/spl-kb" target="_blank">
+                  Special Scheme
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Staff Incentive Scheme */}
+          <Card className="flex flex-col transition-all hover:shadow-lg">
+            <CardHeader>
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600">
+                <Users2 className="h-6 w-6" />
+              </div>
+              <CardTitle>Staff Incentive Scheme</CardTitle>
+              <CardDescription>Incentive scheme eligible for staff members</CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto">
+              <Button asChild className="w-full justify-between bg-green-600 hover:bg-green-700">
+                <Link href="https://github.com/hotspot-gif/STAFF-INCENTIVE" target="_blank">
+                  View Staff Scheme
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* RCM */}
+          <Card className="flex flex-col transition-all hover:shadow-lg">
+            <CardHeader>
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
+                <FileText className="h-6 w-6" />
+              </div>
+              <CardTitle>RCM</CardTitle>
+              <CardDescription>Retailer Contract Management System</CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto">
+              <Button asChild className="w-full justify-between bg-purple-600 hover:bg-purple-700">
+                <Link href="/auth/login">
+                  Open RCM Dashboard
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Field IQ */}
+          <Card className="flex flex-col border-2 border-orange-100 bg-orange-50/30 transition-all hover:shadow-lg md:col-span-2 lg:col-span-1">
+            <CardHeader>
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
+                <BarChart3 className="h-6 w-6" />
+              </div>
+              <CardTitle>Field IQ</CardTitle>
+              <CardDescription>KPI analysis, targets, and performance dashboard</CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto">
+              <ul className="mb-6 space-y-2 text-sm text-slate-600">
+                <li className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                  KPI & Past year KPI analysis
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                  Coverage & Distribution details
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                  Current month target vs actual
+                </li>
+              </ul>
+              <Button asChild className="w-full justify-between bg-orange-600 hover:bg-orange-700">
+                <Link href="https://hs-ita.vercel.app/" target="_blank">
+                  Launch Field IQ
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </section>
+
+      <footer className="mt-auto border-t bg-white py-8">
+        <div className="mx-auto max-w-7xl px-6 text-center text-sm text-slate-500">
+          <p>© {new Date().getFullYear()} Universal Service 2006. All rights reserved.</p>
+        </div>
+      </footer>
     </main>
   )
 }

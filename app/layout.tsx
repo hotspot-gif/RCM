@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   description:
     "Generate, sign and manage retailer distribution contracts for Universal Service 2006 / Lycamobile.",
   generator: "v0.app",
+  icons: {
+    icon: "https://cms-assets.ldsvcplatform.com/IT/s3fs-public/2023-09/MicrosoftTeams-image%20%2813%29.png",
+  },
 }
 
 export default function RootLayout({
