@@ -96,7 +96,7 @@ export async function buildContractPdf({
   ) => {
     let y = startY
     const maxW = PAGE_W - MARGIN_X * 2
-    const paragraphGap = opts?.paragraphGap ?? 5
+    const defaultGap = opts?.paragraphGap ?? 5
     const bottom = opts?.bottomLimit ?? MARGIN_BOTTOM
     for (const b of blocks) {
       const f = b.bold ? fontBold : font
@@ -105,6 +105,12 @@ export async function buildContractPdf({
         y -= LINE_HEIGHT / 2
         continue
       }
+      
+      // Additional space before specific headers
+      if (b.text === "IL PRESENTE CONTRATTO È ORA MODIFICATO COME SEGUE:") {
+        y -= 15
+      }
+
       const lines = wrap(b.text, maxW, f, size)
       for (const line of lines) {
         if (y < bottom) return y // stop — caller controls overflow
@@ -116,7 +122,7 @@ export async function buildContractPdf({
         page.drawText(line, { x, y, size, font: f, color: BLACK })
         y -= LINE_HEIGHT
       }
-      y -= paragraphGap
+      y -= defaultGap
     }
     return y
   }
@@ -178,7 +184,7 @@ export async function buildContractPdf({
 
   // ---------- PAGE 5 ----------
   const p5 = pdf.addPage([PAGE_W, PAGE_H])
-  drawBlocks(p5, page5Body(fields), PAGE_H - MARGIN_TOP, { paragraphGap: 4 })
+  drawBlocks(p5, page5Body(fields), PAGE_H - MARGIN_TOP, { paragraphGap: 12 })
   drawPageFooter(p5, 5)
 
   // ---------- PAGE 6 ----------
@@ -335,13 +341,13 @@ function drawFourPartySignatureBlock(
 
     if (entry.image) {
       const maxW = lineLen - 10
-      const maxH = 34 // Increased height for more natural scale
+      const maxH = 48 // Increased height for more natural scale
       const ratio = Math.min(maxW / entry.image.width, maxH / entry.image.height)
       const w = entry.image.width * ratio
       const h = entry.image.height * ratio
       page.drawImage(entry.image, {
         x: col1X + (lineLen - w) / 2,
-        y: lineY - 3,
+        y: lineY - 5,
         width: w,
         height: h,
         opacity: 0.95, // Slight transparency for ink-on-paper look
@@ -525,13 +531,13 @@ function drawPage4RegistrationForm(
   })
   if (retailerSig) {
     const maxW = sigLineLen - 10
-    const maxH = 44 // Larger for registration form
+    const maxH = 54 // Larger for registration form
     const ratio = Math.min(maxW / retailerSig.width, maxH / retailerSig.height)
     const w = retailerSig.width * ratio
     const h = retailerSig.height * ratio
     page.drawImage(retailerSig, {
       x: sigLineX + (sigLineLen - w) / 2,
-      y: sigLineY - 3,
+      y: sigLineY - 5,
       width: w,
       height: h,
       opacity: 0.95,
@@ -577,13 +583,13 @@ function drawPage4RegistrationForm(
   })
   if (staffSig) {
     const maxW = sigLineLen - 10
-    const maxH = 44
+    const maxH = 54
     const ratio = Math.min(maxW / staffSig.width, maxH / staffSig.height)
     const w = staffSig.width * ratio
     const h = staffSig.height * ratio
     page.drawImage(staffSig, {
       x: zLineX + (sigLineLen - w) / 2,
-      y: zLineY - 3,
+      y: zLineY - 5,
       width: w,
       height: h,
       opacity: 0.95,
@@ -673,13 +679,13 @@ function drawFinalSignatureBlock(
 
     if (row.image) {
       const maxW = lineLen - 10
-      const maxH = 40 // Larger final signature
+      const maxH = 50 // Larger final signature
       const ratio = Math.min(maxW / row.image.width, maxH / row.image.height)
       const w = row.image.width * ratio
       const h = row.image.height * ratio
       page.drawImage(row.image, {
         x: col1X + (lineLen - w) / 2,
-        y: lineY - 3,
+        y: lineY - 5,
         width: w,
         height: h,
         opacity: 0.95,

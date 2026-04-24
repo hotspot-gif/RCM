@@ -55,7 +55,7 @@ export const SignaturePad = forwardRef<SignaturePadHandle, Props>(function Signa
       ctx.lineCap = "round"
       ctx.lineJoin = "round"
       ctx.strokeStyle = "#000080" // Navy blue for a more natural ink look
-      ctx.lineWidth = 1.8
+      ctx.lineWidth = 2.5
 
       // Restore the content if it wasn't empty
       if (tempCtx) {
