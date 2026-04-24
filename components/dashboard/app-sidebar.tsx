@@ -46,24 +46,28 @@ export function AppSidebar({ user }: { user: AppUser }) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-1.5 py-1.5 overflow-hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#245bc1] text-white">
-            <FileSignature className="h-4 w-4" aria-hidden="true" />
-          </div>
-          <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-sm font-semibold text-sidebar-foreground">
-              Contract Manager
-            </span>
-            <span className="truncate text-xs text-sidebar-foreground/70">
-              Universal Service 2006
-            </span>
-          </div>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" className="pointer-events-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#245bc1] text-white">
+                <FileSignature className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div className="flex flex-col gap-0.5 overflow-hidden leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-sm font-semibold text-sidebar-foreground">
+                  Contract Manager
+                </span>
+                <span className="truncate text-xs text-sidebar-foreground/70">
+                  Universal Service 2006
+                </span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {nav
@@ -90,25 +94,29 @@ export function AppSidebar({ user }: { user: AppUser }) {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center gap-2 px-1.5 py-1.5 overflow-hidden">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ffc8b2] text-[11px] font-semibold text-[#21264e]">
-            {user.full_name
-              .split(" ")
-              .map((s) => s[0])
-              .slice(0, 2)
-              .join("")
-              .toUpperCase()}
-          </div>
-          <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-sm font-medium text-sidebar-foreground">
-              {user.full_name}
-            </span>
-            <span className="truncate text-xs text-sidebar-foreground/70">
-              {user.role}
-              {user.branch ? ` · ${user.branch}` : ""}
-            </span>
-          </div>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" className="pointer-events-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ffc8b2] text-[11px] font-semibold text-[#21264e]">
+                {user.full_name
+                  .split(" ")
+                  .map((s) => s[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase()}
+              </div>
+              <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-sm font-medium text-sidebar-foreground">
+                  {user.full_name}
+                </span>
+                <span className="truncate text-xs text-sidebar-foreground/70">
+                  {user.role}
+                  {user.branch ? ` · ${user.branch}` : ""}
+                </span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )
