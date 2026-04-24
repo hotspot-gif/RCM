@@ -51,7 +51,7 @@ export default async function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-brand-navy/5 px-6 py-20 lg:px-8 lg:py-32">
+      <section className="relative overflow-hidden border-b border-brand-navy/5 px-6 pt-16 pb-12 lg:px-8 lg:pt-24 lg:pb-16">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_45%_at_50%_50%,#245bc108_0%,transparent_100%)]" />
         <div className="mx-auto max-w-7xl text-center">
           <div className="mb-6 flex justify-center">

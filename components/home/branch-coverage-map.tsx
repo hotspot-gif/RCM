@@ -375,8 +375,8 @@ export function BranchCoverageMap() {
               <div className="absolute top-0 h-1.5 w-full" style={{ background: tileAccent.branches }} />
               <CardHeader className="pb-4">
                 <div
-                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy shadow-inner transition-transform group-hover:scale-110"
-                  style={{ color: tileAccent.branches }}
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl shadow-inner transition-transform group-hover:scale-110"
+                  style={{ background: tileAccent.branches, color: "#ffffff" }}
                 >
                   <GitBranch className="h-7 w-7" />
                 </div>
@@ -392,8 +392,8 @@ export function BranchCoverageMap() {
               <div className="absolute top-0 h-1.5 w-full" style={{ background: tileAccent.zones }} />
               <CardHeader className="pb-4">
                 <div
-                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy shadow-inner transition-transform group-hover:scale-110"
-                  style={{ color: tileAccent.zones }}
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl shadow-inner transition-transform group-hover:scale-110"
+                  style={{ background: tileAccent.zones, color: "#ffffff" }}
                 >
                   <Layers3 className="h-7 w-7" />
                 </div>
@@ -409,8 +409,8 @@ export function BranchCoverageMap() {
               <div className="absolute top-0 h-1.5 w-full" style={{ background: tileAccent.provinces }} />
               <CardHeader className="pb-4">
                 <div
-                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy shadow-inner transition-transform group-hover:scale-110"
-                  style={{ color: tileAccent.provinces }}
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl shadow-inner transition-transform group-hover:scale-110"
+                  style={{ background: tileAccent.provinces, color: "#ffffff" }}
                 >
                   <MapPinned className="h-7 w-7" />
                 </div>
