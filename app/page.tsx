@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ExternalLink, LayoutDashboard, FileText, BarChart3, Users2, FileSignature, ArrowRight, ShieldCheck, Zap } from "lucide-react"
+import { ExternalLink, LayoutDashboard, FileText, Users2, FileSignature, ArrowRight, ShieldCheck, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
@@ -78,7 +78,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* RCM Card */}
           <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-blue/20">
             <div className="absolute top-0 h-1.5 w-full bg-brand-purple" />
@@ -134,15 +134,15 @@ export default async function HomePage() {
             </CardContent>
           </Card>
 
-          {/* Incentive Schemes Card */}
+          {/* Retailer Incentives Card */}
           <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-yellow/20">
             <div className="absolute top-0 h-1.5 w-full bg-brand-yellow" />
             <CardHeader className="pb-4">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy text-brand-yellow shadow-inner group-hover:scale-110 transition-transform">
                 <Zap className="h-7 w-7" />
               </div>
-              <CardTitle className="text-2xl font-bold text-brand-navy">Incentive Schemes</CardTitle>
-              <CardDescription className="text-slate-500">Retailer & Staff reward programs</CardDescription>
+              <CardTitle className="text-2xl font-bold text-brand-navy">Retailer Incentives</CardTitle>
+              <CardDescription className="text-slate-500">Normal & special retailer schemes</CardDescription>
             </CardHeader>
             <CardContent className="mt-auto flex flex-col gap-4 pt-0">
               <div className="flex flex-col gap-3">
@@ -162,15 +162,29 @@ export default async function HomePage() {
                   <span className="text-sm font-semibold">Special Retailer Scheme</span>
                   <ExternalLink className="h-4 w-4 text-slate-400" />
                 </Link>
-                <Link 
-                  href="https://github.com/hotspot-gif/STAFF-INCENTIVE" 
-                  target="_blank"
-                  className="mt-2 flex items-center justify-between rounded-lg bg-brand-navy p-3 text-brand-cream transition-opacity hover:opacity-90"
-                >
-                  <span className="text-sm font-bold uppercase tracking-wider">Staff Incentive Scheme</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Staff Incentives Card */}
+          <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-green/20">
+            <div className="absolute top-0 h-1.5 w-full bg-brand-green" />
+            <CardHeader className="pb-4">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy text-brand-green shadow-inner group-hover:scale-110 transition-transform">
+                <FileText className="h-7 w-7" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-brand-navy">Staff Incentives</CardTitle>
+              <CardDescription className="text-slate-500">Staff reward program</CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto flex flex-col gap-4 pt-0">
+              <Link
+                href="https://github.com/hotspot-gif/STAFF-INCENTIVE"
+                target="_blank"
+                className="flex items-center justify-between rounded-lg bg-brand-navy p-3 text-brand-cream transition-opacity hover:opacity-90"
+              >
+                <span className="text-sm font-bold uppercase tracking-wider">Staff Incentive Scheme</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </CardContent>
           </Card>
         </div>
