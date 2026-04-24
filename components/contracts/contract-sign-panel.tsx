@@ -85,60 +85,58 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       </CardHeader>
       <CardContent className="pt-6">
         <div className="flex flex-col gap-6">
-          {step === 1 ? (
-            <>
-              <SignaturePad
-                ref={retailerRef}
-                label="Retailer signature"
-                description="Draw the retailer's signature in the box below."
+          <div className={step === 1 ? "flex flex-col gap-6" : "hidden"}>
+            <SignaturePad
+              ref={retailerRef}
+              label="Retailer signature"
+              description="Draw the retailer's signature in the box below."
+            />
+
+            <label className="flex items-start gap-3 rounded-lg border-2 border-brand-blue/10 bg-brand-blue/5 p-4 text-sm transition-colors hover:bg-brand-blue/10">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                checked={ack}
+                onChange={(e) => setAck(e.target.checked)}
               />
+              <span className="leading-relaxed font-medium text-brand-navy">
+                Confermo di aver letto, compreso e accettato tutte le disposizioni del
+                Contratto di distribuzione, il Prospetto delle condizioni di vendita, il
+                Listino Prezzi e l&apos;Allegato sulla prevenzione delle frodi.
+              </span>
+            </label>
 
-              <label className="flex items-start gap-3 rounded-lg border-2 border-brand-blue/10 bg-brand-blue/5 p-4 text-sm transition-colors hover:bg-brand-blue/10">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-                  checked={ack}
-                  onChange={(e) => setAck(e.target.checked)}
-                />
-                <span className="leading-relaxed font-medium text-brand-navy">
-                  Confermo di aver letto, compreso e accettato tutte le disposizioni del
-                  Contratto di distribuzione, il Prospetto delle condizioni di vendita, il
-                  Listino Prezzi e l&apos;Allegato sulla prevenzione delle frodi.
-                </span>
-              </label>
+            <div className="flex justify-end pt-2">
+              <Button onClick={onNext} className="px-8 bg-brand-navy hover:bg-brand-navy/90">
+                Next Step
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-              <div className="flex justify-end pt-2">
-                <Button onClick={onNext} className="px-8 bg-brand-navy hover:bg-brand-navy/90">
-                  Next Step
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="rounded-lg border bg-green-50 p-4 text-green-800 flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium">Retailer has signed and accepted terms.</span>
-              </div>
+          <div className={step === 2 ? "flex flex-col gap-6" : "hidden"}>
+            <div className="rounded-lg border bg-green-50 p-4 text-green-800 flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <span className="text-sm font-medium">Retailer has signed and accepted terms.</span>
+            </div>
 
-              <SignaturePad
-                ref={staffRef}
-                label="Staff signature"
-                description="Staff / Hotspot Manager signs here to finalize the contract."
-              />
+            <SignaturePad
+              ref={staffRef}
+              label="Staff signature"
+              description="Staff / Hotspot Manager signs here to finalize the contract."
+            />
 
-              <div className="flex justify-between pt-2">
-                <Button variant="outline" onClick={() => setStep(1)} disabled={pending}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Retailer
-                </Button>
-                <Button onClick={onSubmit} disabled={pending} className="px-8 bg-brand-green text-brand-navy hover:bg-brand-green/90 font-bold">
-                  {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                  Complete & Generate PDF
-                </Button>
-              </div>
-            </>
-          )}
+            <div className="flex justify-between pt-2">
+              <Button variant="outline" onClick={() => setStep(1)} disabled={pending}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Retailer
+              </Button>
+              <Button onClick={onSubmit} disabled={pending} className="px-8 bg-brand-green text-brand-navy hover:bg-brand-green/90 font-bold">
+                {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
+                Complete & Generate PDF
+              </Button>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
