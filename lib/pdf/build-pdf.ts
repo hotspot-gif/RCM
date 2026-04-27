@@ -431,13 +431,13 @@ function drawFourPartySignatureBlock(
 
     if (entry.image) {
       const maxW = lineLen - 10
-      const maxH = entry.label === "Rivenditore" && otp ? 28 : 48
+      const maxH = 48 // Increased height for more natural scale
       const ratio = Math.min(maxW / entry.image.width, maxH / entry.image.height)
       const w = entry.image.width * ratio
       const h = entry.image.height * ratio
       page.drawImage(entry.image, {
         x: col1X + (lineLen - w) / 2,
-        y: entry.label === "Rivenditore" && otp ? lineY + 4 : lineY - 5,
+        y: lineY - 5,
         width: w,
         height: h,
         opacity: 0.95, // Slight transparency for ink-on-paper look
@@ -478,8 +478,8 @@ function drawFourPartySignatureBlock(
         minute: "2-digit",
       })
       const otpFontSize = 6
-      page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY - 24, size: otpFontSize, font, color: MUTED })
-      page.drawText(`OTP: ${ts} · ${otp.email}`, { x: col1X, y: lineY - 32, size: otpFontSize, font, color: MUTED })
+      page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY + 10, size: otpFontSize, font, color: MUTED })
+      page.drawText(`OTP: ${ts} · ${otp.email}`, { x: col1X, y: lineY + 2, size: otpFontSize, font, color: MUTED })
     }
 
     y -= rowH
@@ -799,13 +799,13 @@ function drawFinalSignatureBlock(
 
     if (row.image) {
       const maxW = lineLen - 10
-      const maxH = row.label === "Rivenditore" && otp ? 28 : 50
+      const maxH = 50 // Larger final signature
       const ratio = Math.min(maxW / row.image.width, maxH / row.image.height)
       const w = row.image.width * ratio
       const h = row.image.height * ratio
       page.drawImage(row.image, {
         x: col1X + (lineLen - w) / 2,
-        y: row.label === "Rivenditore" && otp ? lineY + 4 : lineY - 5,
+        y: lineY - 5,
         width: w,
         height: h,
         opacity: 0.95,
@@ -840,8 +840,8 @@ function drawFinalSignatureBlock(
         minute: "2-digit",
       })
       const otpFontSize = 6
-      page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY - 28, size: otpFontSize, font, color: MUTED })
-      page.drawText(`OTP: ${ts} · ${otp.email}`, { x: col1X, y: lineY - 36, size: otpFontSize, font, color: MUTED })
+      page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY + 10, size: otpFontSize, font, color: MUTED })
+      page.drawText(`OTP: ${ts} · ${otp.email}`, { x: col1X, y: lineY + 2, size: otpFontSize, font, color: MUTED })
     }
 
     y -= rowH
