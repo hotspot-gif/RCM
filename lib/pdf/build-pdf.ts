@@ -408,8 +408,7 @@ function drawFourPartySignatureBlock(
   const col3X = MARGIN_X + lineLen * 2 + 60
 
   for (const entry of entries) {
-    const currentRowH = entry.label === "Rivenditore" && otp ? 60 : rowH
-    if (y < MARGIN_BOTTOM + currentRowH - 10) break
+    if (y < MARGIN_BOTTOM + rowH - 10) break
     const lineY = y - 18
     page.drawLine({
       start: { x: col1X, y: lineY },
@@ -478,12 +477,17 @@ function drawFourPartySignatureBlock(
         hour: "2-digit",
         minute: "2-digit",
       })
-      const otpFontSize = 6.5
-      page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY - 26, size: otpFontSize, font, color: MUTED })
-      page.drawText(`OTP: ${otp.email} · ${ts}`, { x: col1X, y: lineY - 35, size: otpFontSize, font, color: MUTED })
+      const otpFontSize = 6
+      page.drawText(`OTP: ${ts} · ${otp.email}`, {
+        x: col2X + 4,
+        y: lineY - 6,
+        size: otpFontSize,
+        font,
+        color: MUTED,
+      })
     }
 
-    y -= currentRowH
+    y -= rowH
   }
 }
 
@@ -777,7 +781,6 @@ function drawFinalSignatureBlock(
   const col3X = MARGIN_X + lineLen * 2 + 60
 
   for (const row of rows) {
-    const currentRowH = row.label === "Rivenditore" && otp ? 70 : rowH
     if (y < MARGIN_BOTTOM + 20) break
     const lineY = y - 22
     page.drawLine({
@@ -841,11 +844,16 @@ function drawFinalSignatureBlock(
         hour: "2-digit",
         minute: "2-digit",
       })
-      const otpFontSize = 6.5
-      page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY - 28, size: otpFontSize, font, color: MUTED })
-      page.drawText(`OTP: ${otp.email} · ${ts}`, { x: col1X, y: lineY - 37, size: otpFontSize, font, color: MUTED })
+      const otpFontSize = 6
+      page.drawText(`OTP: ${ts} · ${otp.email}`, {
+        x: col2X + 4,
+        y: lineY - 6,
+        size: otpFontSize,
+        font,
+        color: MUTED,
+      })
     }
 
-    y -= currentRowH
+    y -= rowH
   }
 }
