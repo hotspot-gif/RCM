@@ -22,6 +22,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
   const staffRef = useRef<SignaturePadHandle>(null)
   const [pending, startTransition] = useTransition()
   const [ack, setAck] = useState(false)
+  const [gdpr, setGdpr] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
   const [retailerSig, setRetailerSig] = useState<string | null>(null)
 
@@ -50,6 +51,10 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       toast.error("Confirm acceptance of the terms before signing.")
       return
     }
+    if (!gdpr) {
+      toast.error("GDPR privacy consent is required.")
+      return
+    }
     setRetailerSig(retailerData)
     setStep(2)
   }
@@ -60,9 +65,9 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     const retailerData = currentRetailerData || retailerSig
     const staffData = staffRef.current?.toDataUrl()
     
-    if (!retailerData || !ack) {
+    if (!retailerData || !ack || !gdpr) {
       setStep(1)
-      toast.error("Retailer signature and acceptance are required")
+      toast.error("Retailer signature, acceptance and GDPR consent are required")
       return
     }
     
@@ -122,6 +127,19 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                 Confermo di aver letto, compreso e accettato tutte le disposizioni del
                 Contratto di distribuzione, il Prospetto delle condizioni di vendita, il
                 Listino Prezzi e l&apos;Allegato sulla prevenzione delle frodi.
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 rounded-lg border-2 border-brand-green/10 bg-brand-green/5 p-4 text-sm transition-colors hover:bg-brand-green/10">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-green focus:ring-brand-green"
+                checked={gdpr}
+                onChange={(e) => setGdpr(e.target.checked)}
+              />
+              <span className="leading-relaxed font-medium text-brand-navy">
+                Acconsento al trattamento dei dati personali ai sensi del Regolamento (UE) 2016/679 (GDPR) per le finalità
+                connesse alla gestione del contratto e agli adempimenti di legge.
               </span>
             </label>
 

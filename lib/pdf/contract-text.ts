@@ -42,7 +42,7 @@ export function page1Intro(f: ContractFields) {
     },
     { text: "e", align: "center" as const },
     {
-      text: `2. Rivenditore, una società o impresa ${f.companyName} costituita e operante secondo le Leggi della Repubblica Italiana, numero Registro Imprese [[B]]${f.vatNumber}[[B]] con sede in [[B]]${f.address}[[B]], numero di telefono [[B]]${f.mobileNumber}[[B]], persona di contatto ${f.contactPerson}.`,
+      text: `2. Rivenditore, una società o impresa [[B]]${f.companyName}[[B]] costituita e operante secondo le Leggi della Repubblica Italiana, numero Registro Imprese [[B]]${f.vatNumber}[[B]] con sede in [[B]]${f.address}[[B]], numero di telefono [[B]]${f.mobileNumber}[[B]], persona di contatto [[B]]${f.contactPerson}[[B]].`,
     },
   ]
 }
@@ -222,8 +222,7 @@ export const page3Outro = [
 
 export const page5Body = (f: ContractFields) => [
   {
-    bold: true,
-    text: `Allegato al PRESENTE CONTRATTO DI DISTRIBUZIONE è stipulato in data [[B]]${f.date}[[B]]`,
+    text: `[[B]]Allegato al PRESENTE CONTRATTO DI DISTRIBUZIONE è stipulato in data [[B]]${f.date}`,
   },
   { text: "TRA:" },
   {
@@ -232,7 +231,7 @@ export const page5Body = (f: ContractFields) => [
   },
   { text: "E", align: "center" as const },
   {
-    text: `2. Rivenditore, una società o impresa ${f.companyName} costituita e operante secondo le Leggi della Repubblica Italiana numero Registro Imprese [[B]]${f.vatNumber}[[B]] con sede in [[B]]${f.address}[[B]].`,
+    text: `2. Rivenditore, una società o impresa [[B]]${f.companyName}[[B]] costituita e operante secondo le Leggi della Repubblica Italiana numero Registro Imprese [[B]]${f.vatNumber}[[B]] con sede in [[B]]${f.address}[[B]].`,
   },
   { text: "Le parti hanno un accordo tra le parti per regolare gli affari tra le parti." },
   { text: "Questa modifica viene apportata ai sensi di tale Accordo e tutti i termini definiti seguono l'Accordo." },
