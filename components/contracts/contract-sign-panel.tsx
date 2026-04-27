@@ -229,9 +229,10 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                   maxLength={6}
                   value={otp}
                   onChange={(v) => setOtp(v)}
+                  autoFocus
+                  autoComplete="one-time-code"
                   inputMode="numeric"
-                  pattern="\\d*"
-                  disabled={pending}
+                  pattern="[0-9]*"
                 >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
