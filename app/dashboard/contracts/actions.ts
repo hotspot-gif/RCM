@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
+import crypto from "node:crypto"
 import { createClient } from "@/lib/supabase/server"
 import { requireUser } from "@/lib/auth"
 import { buildContractPdf } from "@/lib/pdf/build-pdf"
@@ -135,6 +136,9 @@ export async function finalizeContractAction(input: {
       return { ok: false, error: contractErr?.message || "Contract not found" }
     }
     const contract = contractRow as Contract
+    if (!contract.otp_verified_at) {
+      return { ok: false, error: "OTP verification is required before finalizing." }
+    }
 
     // 1. Upload signatures
     const retailerPath = await uploadSignature(
@@ -195,6 +199,11 @@ export async function finalizeContractAction(input: {
       usLogoPng: usLogoBytes,
       lycaLogoPng: lycaLogoBytes,
       staffSignerName: staffUser.full_name,
+      otpProof: {
+        retailerName: fullName,
+        email: contract.email,
+        verifiedAtIso: contract.otp_verified_at,
+      },
     })
 
     const pdfPath = `${input.id}/contract-${Date.now()}.pdf`
@@ -231,6 +240,145 @@ export async function finalizeContractAction(input: {
       ok: false, 
       error: e instanceof Error ? e.message : "An unexpected error occurred during finalization" 
     }
+  }
+}
+
+function hashOtp(otp: string, salt: string) {
+  return crypto.createHash("sha256").update(`${salt}:${otp}`).digest("hex")
+}
+
+export async function requestContractOtpAction(
+  id: string,
+): Promise<ActionResult<{ sentTo: string }>> {
+  try {
+    await requireUser()
+    const supabase = await createClient()
+
+    const { data: contractRow, error: contractErr } = await supabase
+      .from("contracts")
+      .select("*")
+      .eq("id", id)
+      .single()
+    if (contractErr || !contractRow) {
+      return { ok: false, error: contractErr?.message || "Contract not found" }
+    }
+    const contract = contractRow as Contract
+    if (!contract.email) {
+      return { ok: false, error: "Retailer email is missing." }
+    }
+
+    const resendKey = process.env.RESEND_API_KEY
+    if (!resendKey) {
+      return {
+        ok: false,
+        error: "Email is not configured. Set RESEND_API_KEY to enable OTP sending.",
+      }
+    }
+
+    const otp = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0")
+    const salt = crypto.randomBytes(16).toString("hex")
+    const now = new Date()
+    const expiresAt = new Date(now.getTime() + 10 * 60 * 1000)
+
+    const { error: updErr } = await supabase
+      .from("contracts")
+      .update({
+        otp_hash: hashOtp(otp, salt),
+        otp_salt: salt,
+        otp_sent_at: now.toISOString(),
+        otp_expires_at: expiresAt.toISOString(),
+        otp_verified_at: null,
+        otp_attempts: 0,
+      })
+      .eq("id", id)
+    if (updErr) return { ok: false, error: updErr.message }
+
+    const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [contract.email],
+        subject: "OTP verification code",
+        text: `Gentile ${contract.contact_first_name},\n\nIl tuo codice OTP è: ${otp}\n\nIl codice scade tra 10 minuti.\n\nGrazie,\nUniversal Service 2006 S.R.L`,
+      }),
+    })
+
+    if (!res.ok) {
+      const body = await res.text()
+      return { ok: false, error: `OTP email failed: ${body}` }
+    }
+
+    return { ok: true, data: { sentTo: contract.email } }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
+export async function verifyContractOtpAction(input: {
+  id: string
+  otp: string
+}): Promise<ActionResult<{ verifiedAt: string }>> {
+  try {
+    await requireUser()
+    const supabase = await createClient()
+
+    const { data: contractRow, error: contractErr } = await supabase
+      .from("contracts")
+      .select("*")
+      .eq("id", input.id)
+      .single()
+    if (contractErr || !contractRow) {
+      return { ok: false, error: contractErr?.message || "Contract not found" }
+    }
+    const contract = contractRow as Contract
+
+    const otpHash = contract.otp_hash ?? null
+    const otpSalt = contract.otp_salt ?? null
+    const otpExpiresAt = contract.otp_expires_at ?? null
+    const attempts = contract.otp_attempts ?? 0
+
+    if (!otpHash || !otpSalt || !otpExpiresAt) {
+      return { ok: false, error: "OTP is not requested yet." }
+    }
+    if (attempts >= 5) {
+      return { ok: false, error: "Too many attempts. Request a new OTP." }
+    }
+
+    const expires = new Date(otpExpiresAt).getTime()
+    if (Number.isNaN(expires) || Date.now() > expires) {
+      return { ok: false, error: "OTP expired. Request a new OTP." }
+    }
+
+    const code = input.otp.replace(/\s+/g, "")
+    if (!/^\d{6}$/.test(code)) {
+      return { ok: false, error: "OTP must be 6 digits." }
+    }
+
+    const ok = hashOtp(code, otpSalt) === otpHash
+    if (!ok) {
+      const { error: incErr } = await supabase
+        .from("contracts")
+        .update({ otp_attempts: attempts + 1 })
+        .eq("id", input.id)
+      if (incErr) return { ok: false, error: incErr.message }
+      return { ok: false, error: "Invalid OTP." }
+    }
+
+    const verifiedAt = new Date().toISOString()
+    const { error: verErr } = await supabase
+      .from("contracts")
+      .update({ otp_verified_at: verifiedAt })
+      .eq("id", input.id)
+    if (verErr) return { ok: false, error: verErr.message }
+
+    return { ok: true, data: { verifiedAt } }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
   }
 }
 

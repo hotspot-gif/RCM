@@ -36,6 +36,12 @@ export interface Contract {
   status: ContractStatus
   signed_at: string | null
   emailed_at: string | null
+  otp_hash?: string | null
+  otp_salt?: string | null
+  otp_sent_at?: string | null
+  otp_expires_at?: string | null
+  otp_verified_at?: string | null
+  otp_attempts?: number | null
   created_at: string
   updated_at: string
 }

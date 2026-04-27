@@ -42,6 +42,7 @@ interface BuildArgs {
   lycaLogoPng?: Uint8Array | null
   /** Full name of the staff user generating/signing the contract. */
   staffSignerName?: string
+  otpProof?: { retailerName: string; email: string; verifiedAtIso: string }
 }
 
 export async function buildContractPdf({
@@ -51,6 +52,7 @@ export async function buildContractPdf({
   usLogoPng,
   lycaLogoPng,
   staffSignerName,
+  otpProof,
 }: BuildArgs): Promise<Uint8Array> {
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
@@ -79,6 +81,13 @@ export async function buildContractPdf({
   }
 
   const staffName = (staffSignerName?.trim() || "Staff").toUpperCase()
+  const otp = otpProof
+    ? {
+        retailerName: otpProof.retailerName,
+        email: otpProof.email,
+        verifiedAtIso: otpProof.verifiedAtIso,
+      }
+    : null
 
   const totalPages = 7
 
@@ -253,12 +262,12 @@ export async function buildContractPdf({
   y3 -= 40
   y3 = drawBlocks(p3, page3Outro, y3, 3, { paragraphGap: 4 })
   y3 -= 8
-  drawFourPartySignatureBlock(p3, font, fontBold, retailerSig, staffSig, y3, fields, staffName)
+  drawFourPartySignatureBlock(p3, font, fontBold, retailerSig, staffSig, y3, fields, staffName, otp)
   drawPageFooter(p3, 3)
 
   // ---------- PAGE 4: Modulo di Registrazione Rivenditore ----------
   const p4 = pdf.addPage([PAGE_W, PAGE_H])
-  drawPage4RegistrationForm(p4, font, fontBold, fields, retailerSig, staffSig, lycaLogo)
+  drawPage4RegistrationForm(p4, font, fontBold, fields, retailerSig, staffSig, lycaLogo, otp)
   drawPageFooter(p4, 4)
 
   // ---------- PAGE 5 ----------
@@ -281,7 +290,7 @@ export async function buildContractPdf({
   })
   // Place signature block at a fixed location near bottom.
   const sigTop = Math.min(y7 - 20, MARGIN_BOTTOM + 120)
-  drawFinalSignatureBlock(p7, font, fontBold, retailerSig, staffSig, sigTop, fields, staffName)
+  drawFinalSignatureBlock(p7, font, fontBold, retailerSig, staffSig, sigTop, fields, staffName, otp)
   drawPageFooter(p7, 7)
 
   return await pdf.save()
@@ -378,6 +387,7 @@ function drawFourPartySignatureBlock(
   startY: number,
   f: ContractFields,
   staffName: string,
+  otp: { retailerName: string; email: string; verifiedAtIso: string } | null,
 ) {
   const entries: Array<{
     label: string
@@ -458,6 +468,20 @@ function drawFourPartySignatureBlock(
     page.drawText("Firmato da :", { x: col2X, y: lineY - 12, size: 9, font, color: BLACK })
     page.drawText("Data :", { x: col3X, y: lineY - 12, size: 9, font, color: BLACK })
 
+    if (entry.label === "Rivenditore" && otp) {
+      const ts = new Date(otp.verifiedAtIso).toLocaleString("it-IT", {
+        timeZone: "Europe/Rome",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      const otpFontSize = 6.5
+      page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY - 26, size: otpFontSize, font, color: MUTED })
+      page.drawText(`OTP: ${otp.email} · ${ts}`, { x: col1X, y: lineY - 35, size: otpFontSize, font, color: MUTED })
+    }
+
     y -= rowH
   }
 }
@@ -474,6 +498,7 @@ function drawPage4RegistrationForm(
   retailerSig: PDFImage | null,
   staffSig: PDFImage | null,
   lycaLogo: PDFImage | null,
+  otp: { retailerName: string; email: string; verifiedAtIso: string } | null,
 ) {
   // ----- Left header: Universal Service contact block -----
   let y = PAGE_H - MARGIN_TOP
@@ -623,6 +648,19 @@ function drawPage4RegistrationForm(
       opacity: 0.95,
     })
   }
+  if (otp) {
+    const ts = new Date(otp.verifiedAtIso).toLocaleString("it-IT", {
+      timeZone: "Europe/Rome",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    const otpFontSize = 6.5
+    page.drawText(`${otp.retailerName}`, { x: sigLineX, y: sigLineY - 22, size: otpFontSize, font, color: MUTED })
+    page.drawText(`OTP: ${otp.email} · ${ts}`, { x: sigLineX, y: sigLineY - 31, size: otpFontSize, font, color: MUTED })
+  }
   page.drawText("Data:", {
     x: sigLineX + sigLineLen + 20,
     y: ry,
@@ -724,6 +762,7 @@ function drawFinalSignatureBlock(
   startY: number,
   f: ContractFields,
   staffName: string,
+  otp: { retailerName: string; email: string; verifiedAtIso: string } | null,
 ) {
   const rows: Array<{ label: string; image: PDFImage | null; signedBy: string }> = [
     { label: "Rivenditore", image: retailerSig, signedBy: f.contactPerson },
@@ -790,6 +829,20 @@ function drawFinalSignatureBlock(
     page.drawText(row.label, { x: col1X, y: lineY - 13, size: 9, font, color: BLACK })
     page.drawText("Firmato da :", { x: col2X, y: lineY - 13, size: 9, font, color: BLACK })
     page.drawText("Data :", { x: col3X, y: lineY - 13, size: 9, font, color: BLACK })
+
+    if (row.label === "Rivenditore" && otp) {
+      const ts = new Date(otp.verifiedAtIso).toLocaleString("it-IT", {
+        timeZone: "Europe/Rome",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      const otpFontSize = 6.5
+      page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY - 28, size: otpFontSize, font, color: MUTED })
+      page.drawText(`OTP: ${otp.email} · ${ts}`, { x: col1X, y: lineY - 37, size: otpFontSize, font, color: MUTED })
+    }
 
     y -= rowH
   }
