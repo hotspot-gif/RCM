@@ -436,12 +436,11 @@ function drawFourPartySignatureBlock(
 
     // Firmato da — printed name above the line
     if (entry.signedBy) {
-      const nameFont = entry.label === "Rivenditore" ? fontBold : font
       page.drawText(entry.signedBy.toUpperCase(), {
         x: col2X + 4,
         y: lineY + 2,
         size: 9, // Reduced from 10 to match other pages and look more natural
-        font: nameFont,
+        font,
         color: BLACK,
       })
       // Data — filled with contract date when the row represents a signed party
@@ -777,7 +776,7 @@ function drawFinalSignatureBlock(
       x: col2X + 4,
       y: lineY + 2,
       size: 10,
-      font: row.label === "Rivenditore" ? fontBold : font,
+      font,
       color: BLACK,
     })
     page.drawText(f.date, {
