@@ -657,9 +657,9 @@ function drawPage4RegistrationForm(
       hour: "2-digit",
       minute: "2-digit",
     })
-    const otpFontSize = 6.5
-    page.drawText(`${otp.retailerName}`, { x: sigLineX, y: sigLineY - 22, size: otpFontSize, font, color: MUTED })
-    page.drawText(`OTP: ${otp.email} · ${ts}`, { x: sigLineX, y: sigLineY - 31, size: otpFontSize, font, color: MUTED })
+    const otpFontSize = 6
+    page.drawText(`${otp.retailerName}`, { x: sigLineX, y: ry + 12, size: otpFontSize, font, color: MUTED })
+    page.drawText(`OTP: ${ts} · ${otp.email}`, { x: sigLineX, y: ry + 4, size: otpFontSize, font, color: MUTED })
   }
   page.drawText("Data:", {
     x: sigLineX + sigLineLen + 20,
