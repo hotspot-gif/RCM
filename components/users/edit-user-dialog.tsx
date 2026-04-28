@@ -32,6 +32,7 @@ export function EditUserDialog({
     email: "",
     role: "FSE" as AppUser["role"],
     branch: null as string | null,
+    branches: null as string[] | null,
     zone: null as string | null,
     is_active: true,
   })
@@ -44,6 +45,7 @@ export function EditUserDialog({
         email: user.email,
         role: user.role,
         branch: user.branch,
+        branches: user.branches ?? null,
         zone: user.zone,
         is_active: user.is_active,
       })
@@ -56,10 +58,15 @@ export function EditUserDialog({
     e.preventDefault()
     if (!user) return
     startTransition(async () => {
+      if (values.role === "RSM" && (!values.branches || values.branches.length === 0)) {
+        toast.error("Select at least one branch for RSM.")
+        return
+      }
       const res = await updateUserAction(user.id, {
         full_name: values.full_name,
         role: values.role,
         branch: values.branch,
+        branches: values.branches,
         zone: values.zone,
         is_active: values.is_active,
       })

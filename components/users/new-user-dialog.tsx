@@ -24,6 +24,7 @@ const initial = {
   password: "",
   role: "FSE" as Role,
   branch: null as string | null,
+  branches: null as string[] | null,
   zone: null as string | null,
 }
 
@@ -35,12 +36,17 @@ export function NewUserDialog() {
   function submit(e: React.FormEvent) {
     e.preventDefault()
     startTransition(async () => {
+      if (values.role === "RSM" && (!values.branches || values.branches.length === 0)) {
+        toast.error("Select at least one branch for RSM.")
+        return
+      }
       const res = await createUserAction({
         email: values.email,
         password: values.password ?? "",
         full_name: values.full_name,
         role: values.role,
         branch: values.branch,
+        branches: values.branches,
         zone: values.zone,
       })
       if (!res.ok) {

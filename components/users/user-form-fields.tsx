@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
   SelectContent,
@@ -17,6 +18,7 @@ interface Values {
   password?: string
   role: Role
   branch: string | null
+  branches?: string[] | null
   zone: string | null
 }
 
@@ -85,9 +87,9 @@ export function UserFormFields({
           onValueChange={(v) =>
             onChange({
               role: v as Role,
-              // Reset scope fields when switching to ADMIN
-              branch: v === "ADMIN" ? null : values.branch,
-              zone: v === "ADMIN" || v === "ASM" ? null : values.zone,
+              branch: v === "ASM" || v === "FSE" ? values.branch : null,
+              branches: v === "RSM" ? (values.branches ?? []) : null,
+              zone: v === "FSE" ? values.zone : null,
             })
           }
         >
@@ -104,7 +106,31 @@ export function UserFormFields({
         </Select>
       </div>
 
-      {values.role !== "ADMIN" ? (
+      {values.role === "RSM" ? (
+        <div className="flex flex-col gap-2">
+          <Label>Branches</Label>
+          <div className="grid grid-cols-1 gap-2 rounded-lg border p-3">
+            {BRANCHES.map((b) => {
+              const checked = (values.branches ?? []).includes(b)
+              return (
+                <label key={b} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(next) => {
+                      const nextChecked = next === true
+                      const set = new Set(values.branches ?? [])
+                      if (nextChecked) set.add(b)
+                      else set.delete(b)
+                      onChange({ branches: Array.from(set) })
+                    }}
+                  />
+                  <span className="break-words">{b}</span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      ) : values.role !== "ADMIN" ? (
         <div className="flex flex-col gap-2">
           <Label>Branch</Label>
           <Select

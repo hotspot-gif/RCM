@@ -38,7 +38,8 @@ export async function createContractAction(
     const user = await requireUser()
     const supabase = await createClient()
 
-    const branch = input.branch ?? user.branch
+    const branch =
+      input.branch ?? user.branch ?? (user.role === "RSM" ? (user.branches?.[0] ?? null) : null)
     const zone = input.zone ?? user.zone
 
     const { data, error } = await supabase
@@ -84,9 +85,11 @@ export async function updateContractAction(
     }
 
     const nextBranch =
-      user.role === "ADMIN" ? (input.branch ?? existing.branch) : existing.branch
+      user.role === "ADMIN" || user.role === "RSM"
+        ? (input.branch ?? existing.branch)
+        : existing.branch
     const nextZone =
-      user.role === "ADMIN" || user.role === "ASM"
+      user.role === "ADMIN" || user.role === "ASM" || user.role === "RSM"
         ? (input.zone ?? existing.zone)
         : existing.zone
 

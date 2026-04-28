@@ -15,10 +15,15 @@ export async function createUserAction(input: {
   full_name: string
   role: Role
   branch: string | null
+  branches?: string[] | null
   zone: string | null
 }): Promise<ActionResult> {
   try {
     await requireAdmin()
+    const normalizedBranches = (input.branches ?? []).filter(Boolean)
+    if (input.role === "RSM" && normalizedBranches.length === 0) {
+      return { ok: false, error: "RSM must have at least one branch." }
+    }
 
     // Use a standalone client so we do not overwrite the admin's session cookies
     // when calling signUp.
@@ -49,8 +54,9 @@ export async function createUserAction(input: {
       email: input.email,
       full_name: input.full_name,
       role: input.role,
-      branch: input.branch,
-      zone: input.zone,
+      branch: input.role === "ASM" || input.role === "FSE" ? input.branch : null,
+      branches: input.role === "RSM" ? normalizedBranches : null,
+      zone: input.role === "FSE" ? input.zone : null,
       is_active: true,
     })
 
@@ -69,14 +75,25 @@ export async function updateUserAction(
     full_name: string
     role: Role
     branch: string | null
+    branches: string[] | null
     zone: string | null
     is_active: boolean
   }>,
 ): Promise<ActionResult> {
   try {
     await requireAdmin()
+    const normalizedBranches = (patch.branches ?? []).filter(Boolean)
+    if (patch.role === "RSM" && normalizedBranches.length === 0) {
+      return { ok: false, error: "RSM must have at least one branch." }
+    }
+    const normalizedPatch: typeof patch = {
+      ...patch,
+      branch: patch.role === "ASM" || patch.role === "FSE" ? (patch.branch ?? null) : null,
+      branches: patch.role === "RSM" ? normalizedBranches : null,
+      zone: patch.role === "FSE" ? (patch.zone ?? null) : null,
+    }
     const supabase = await createClient()
-    const { error } = await supabase.from("users").update(patch).eq("id", id)
+    const { error } = await supabase.from("users").update(normalizedPatch).eq("id", id)
     if (error) return { ok: false, error: error.message }
     revalidatePath("/dashboard/users")
     return { ok: true }

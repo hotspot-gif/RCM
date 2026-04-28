@@ -8,8 +8,9 @@ create table if not exists public.users (
   id uuid primary key references auth.users(id) on delete cascade,
   email text unique not null,
   full_name text not null,
-  role text not null check (role in ('ADMIN','ASM','FSE')),
+  role text not null check (role in ('ADMIN','RSM','ASM','FSE')),
   branch text,
+  branches text[],
   zone text,
   is_active boolean not null default true,
   created_at timestamptz not null default now()
@@ -148,6 +149,7 @@ create policy "contracts_scoped_select" on public.contracts for select using (
   exists (
     select 1 from public.users u where u.id = auth.uid() and (
       u.role = 'ADMIN'
+      or (u.role = 'RSM' and contracts.branch = any(coalesce(u.branches, array[]::text[])))
       or (u.role = 'ASM' and u.branch = contracts.branch)
       or (u.role = 'FSE' and u.zone = contracts.zone)
     )
@@ -156,7 +158,16 @@ create policy "contracts_scoped_select" on public.contracts for select using (
 
 drop policy if exists "contracts_insert" on public.contracts;
 create policy "contracts_insert" on public.contracts for insert with check (
-  auth.uid() is not null and created_by = auth.uid()
+  auth.uid() is not null
+  and created_by = auth.uid()
+  and exists (
+    select 1 from public.users u where u.id = auth.uid() and (
+      u.role = 'ADMIN'
+      or (u.role = 'RSM' and contracts.branch = any(coalesce(u.branches, array[]::text[])))
+      or (u.role = 'ASM' and u.branch = contracts.branch)
+      or (u.role = 'FSE' and u.zone = contracts.zone)
+    )
+  )
 );
 
 drop policy if exists "contracts_update" on public.contracts;
@@ -164,6 +175,7 @@ create policy "contracts_update" on public.contracts for update using (
   exists (
     select 1 from public.users u where u.id = auth.uid() and (
       u.role = 'ADMIN'
+      or (u.role = 'RSM' and contracts.branch = any(coalesce(u.branches, array[]::text[])))
       or (u.role = 'ASM' and u.branch = contracts.branch)
       or (u.role = 'FSE' and u.zone = contracts.zone)
     )

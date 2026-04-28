@@ -70,6 +70,8 @@ export function UsersTable({ users }: { users: AppUser[] }) {
                     className={
                       u.role === "ADMIN"
                         ? "bg-[#245bc1] text-white hover:bg-[#245bc1]"
+                        : u.role === "RSM"
+                          ? "bg-[#21264e] text-white hover:bg-[#21264e]"
                         : u.role === "ASM"
                           ? "bg-[#ffc8b2] text-[#21264e] hover:bg-[#ffc8b2]"
                           : "bg-muted"
@@ -79,7 +81,9 @@ export function UsersTable({ users }: { users: AppUser[] }) {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {u.branch ?? "—"}
+                  {u.role === "RSM"
+                    ? (u.branches && u.branches.length > 0 ? u.branches.join(", ") : "—")
+                    : (u.branch ?? "—")}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {u.zone ?? "—"}

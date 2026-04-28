@@ -3,11 +3,14 @@ import type { AppUser } from "@/lib/types"
 
 /**
  * Apply role-based scoping to a contracts query.
- * ADMIN: no filter, ASM: branch filter, FSE: zone filter.
+ * ADMIN: no filter, RSM: multi-branch filter, ASM: branch filter, FSE: zone filter.
  */
 // biome-ignore lint/suspicious/noExplicitAny: supabase builder is generic
 export function scopeContractsQuery(query: any, user: AppUser): any {
   if (user.role === "ADMIN") return query
+  if (user.role === "RSM" && user.branches && user.branches.length > 0) {
+    return query.in("branch", user.branches)
+  }
   if (user.role === "ASM" && user.branch) return query.eq("branch", user.branch)
   if (user.role === "FSE" && user.zone) return query.eq("zone", user.zone)
   // No scope configured - show only own

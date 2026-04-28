@@ -71,6 +71,12 @@ export function NewContractForm({
   >>
 }) {
   const router = useRouter()
+  const rsmBranches = BRANCHES.filter((b) => (currentUser.branches ?? []).includes(b))
+  const allowedBranches = currentUser.role === "RSM" ? rsmBranches : BRANCHES
+  const defaultBranch =
+    initialValues?.branch ??
+    currentUser.branch ??
+    (currentUser.role === "RSM" ? (allowedBranches[0] ?? "") : "")
   const [values, setValues] = useState<FormValues>(() => ({
     ...initial,
     company_name: initialValues?.company_name ?? "",
@@ -85,13 +91,14 @@ export function NewContractForm({
     landline_number: toLocalPhone(initialValues?.landline_number),
     mobile_number: toLocalPhone(initialValues?.mobile_number),
     email: initialValues?.email ?? "",
-    branch: initialValues?.branch ?? currentUser.branch ?? "",
+    branch: defaultBranch,
     zone: initialValues?.zone ?? currentUser.zone ?? "",
   }))
   const [pending, startTransition] = useTransition()
 
-  const canEditBranch = currentUser.role === "ADMIN"
-  const canEditZone = currentUser.role === "ADMIN" || currentUser.role === "ASM"
+  const canEditBranch = currentUser.role === "ADMIN" || currentUser.role === "RSM"
+  const canEditZone =
+    currentUser.role === "ADMIN" || currentUser.role === "ASM" || currentUser.role === "RSM"
   const zones = values.branch
     ? (ZONES_BY_BRANCH[values.branch as Branch] ?? [])
     : []
@@ -102,6 +109,10 @@ export function NewContractForm({
 
   function submit(e: FormEvent) {
     e.preventDefault()
+    if (currentUser.role === "RSM" && allowedBranches.length === 0) {
+      toast.error("No branches assigned to this RSM user.")
+      return
+    }
 
     const mobileClean = values.mobile_number.replace(/\D/g, "")
     const landlineClean = values.landline_number.replace(/\D/g, "")
@@ -306,7 +317,7 @@ export function NewContractForm({
               <SelectValue placeholder="Select branch" />
             </SelectTrigger>
             <SelectContent>
-              {BRANCHES.map((b) => (
+              {allowedBranches.map((b) => (
                 <SelectItem key={b} value={b}>
                   {b}
                 </SelectItem>

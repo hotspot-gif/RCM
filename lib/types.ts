@@ -6,6 +6,7 @@ export interface AppUser {
   full_name: string
   role: Role
   branch: string | null
+  branches?: string[] | null
   zone: string | null
   is_active: boolean
   created_at: string

@@ -293,7 +293,7 @@ export function BranchCoverageMap() {
         .attr("stroke-width", 0.5)
         .style("cursor", "pointer")
         .style("transition", "opacity 0.15s")
-        .on("mouseover", function (event: any, d: any) {
+        .on("mouseover", function (this: SVGPathElement, event: any, d: any) {
           const code = d.properties.prov_acr as string
           const p = byCode[code]
           d3.select(this).attr("stroke-width", 1.5).attr("opacity", 0.85)
@@ -312,7 +312,7 @@ export function BranchCoverageMap() {
           tooltipEl.style.left = `${x + 12}px`
           tooltipEl.style.top = `${y - 10}px`
         })
-        .on("mouseleave", function () {
+        .on("mouseleave", function (this: SVGPathElement) {
           d3.select(this).attr("stroke-width", 0.5).attr("opacity", 1)
           if (tooltipEl) tooltipEl.style.display = "none"
         })

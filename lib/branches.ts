@@ -43,5 +43,5 @@ export const ZONES_BY_BRANCH: Record<Branch, string[]> = {
 
 export const ALL_ZONES: string[] = Object.values(ZONES_BY_BRANCH).flat()
 
-export const ROLES = ["ADMIN", "ASM", "FSE"] as const
+export const ROLES = ["ADMIN", "RSM", "ASM", "FSE"] as const
 export type Role = (typeof ROLES)[number]
