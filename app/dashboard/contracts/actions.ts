@@ -63,6 +63,70 @@ export async function createContractAction(
   }
 }
 
+export async function updateContractAction(
+  input: { id: string } & NewContractInput,
+): Promise<ActionResult> {
+  try {
+    const user = await requireUser()
+    const supabase = await createClient()
+
+    const { data: existingRow, error: existingErr } = await supabase
+      .from("contracts")
+      .select("id, status, branch, zone")
+      .eq("id", input.id)
+      .single()
+    if (existingErr || !existingRow) {
+      return { ok: false, error: existingErr?.message || "Contract not found" }
+    }
+    const existing = existingRow as Pick<Contract, "id" | "status" | "branch" | "zone">
+    if (existing.status === "SIGNED") {
+      return { ok: false, error: "Signed contracts cannot be edited." }
+    }
+
+    const nextBranch =
+      user.role === "ADMIN" ? (input.branch ?? existing.branch) : existing.branch
+    const nextZone =
+      user.role === "ADMIN" || user.role === "ASM"
+        ? (input.zone ?? existing.zone)
+        : existing.zone
+
+    const { error: updErr } = await supabase
+      .from("contracts")
+      .update({
+        company_name: input.company_name,
+        vat_number: input.vat_number,
+        contact_first_name: input.contact_first_name,
+        contact_last_name: input.contact_last_name,
+        shop_name: input.shop_name,
+        street: input.street,
+        house_number: input.house_number,
+        city: input.city,
+        post_code: input.post_code,
+        landline_number: input.landline_number ?? null,
+        mobile_number: input.mobile_number,
+        email: input.email,
+        branch: nextBranch ?? null,
+        zone: nextZone ?? null,
+        otp_hash: null,
+        otp_salt: null,
+        otp_sent_at: null,
+        otp_expires_at: null,
+        otp_verified_at: null,
+        otp_attempts: 0,
+      })
+      .eq("id", input.id)
+
+    if (updErr) return { ok: false, error: updErr.message }
+
+    revalidatePath("/dashboard")
+    revalidatePath("/dashboard/contracts")
+    revalidatePath(`/dashboard/contracts/${input.id}`)
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
 export async function deleteContractAction(
   id: string,
 ): Promise<ActionResult> {

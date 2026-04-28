@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, type FormEvent, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
@@ -15,8 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { BRANCHES, ZONES_BY_BRANCH, type Branch } from "@/lib/branches"
-import { createContractAction } from "@/app/dashboard/contracts/actions"
-import type { AppUser } from "@/lib/types"
+import { createContractAction, updateContractAction } from "@/app/dashboard/contracts/actions"
+import type { AppUser, Contract } from "@/lib/types"
 
 const initial = {
   company_name: "",
@@ -35,13 +35,59 @@ const initial = {
   zone: "" as string,
 }
 
-export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
+type FormValues = typeof initial
+
+function toLocalPhone(value: string | null | undefined) {
+  const digits = (value ?? "").replace(/\D/g, "")
+  if (digits.startsWith("39") && digits.length >= 12) return digits.slice(2, 12)
+  return digits.slice(0, 10)
+}
+
+export function NewContractForm({
+  currentUser,
+  mode = "create",
+  contractId,
+  initialValues,
+}: {
+  currentUser: AppUser
+  mode?: "create" | "edit"
+  contractId?: string
+  initialValues?: Partial<Pick<
+    Contract,
+    | "company_name"
+    | "vat_number"
+    | "contact_first_name"
+    | "contact_last_name"
+    | "shop_name"
+    | "street"
+    | "house_number"
+    | "city"
+    | "post_code"
+    | "landline_number"
+    | "mobile_number"
+    | "email"
+    | "branch"
+    | "zone"
+  >>
+}) {
   const router = useRouter()
-  const [values, setValues] = useState({
+  const [values, setValues] = useState<FormValues>(() => ({
     ...initial,
-    branch: currentUser.branch ?? "",
-    zone: currentUser.zone ?? "",
-  })
+    company_name: initialValues?.company_name ?? "",
+    vat_number: initialValues?.vat_number ?? "",
+    contact_first_name: initialValues?.contact_first_name ?? "",
+    contact_last_name: initialValues?.contact_last_name ?? "",
+    shop_name: initialValues?.shop_name ?? "",
+    street: initialValues?.street ?? "",
+    house_number: initialValues?.house_number ?? "",
+    city: initialValues?.city ?? "",
+    post_code: initialValues?.post_code ?? "",
+    landline_number: toLocalPhone(initialValues?.landline_number),
+    mobile_number: toLocalPhone(initialValues?.mobile_number),
+    email: initialValues?.email ?? "",
+    branch: initialValues?.branch ?? currentUser.branch ?? "",
+    zone: initialValues?.zone ?? currentUser.zone ?? "",
+  }))
   const [pending, startTransition] = useTransition()
 
   const canEditBranch = currentUser.role === "ADMIN"
@@ -54,7 +100,7 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
     setValues((prev) => ({ ...prev, [key]: v }))
   }
 
-  function submit(e: React.FormEvent) {
+  function submit(e: FormEvent) {
     e.preventDefault()
 
     const mobileClean = values.mobile_number.replace(/\D/g, "")
@@ -82,7 +128,7 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
     }
 
     startTransition(async () => {
-      const res = await createContractAction({
+      const payload = {
         company_name: values.company_name.trim(),
         vat_number: values.vat_number.trim(),
         contact_first_name: values.contact_first_name.trim(),
@@ -97,7 +143,25 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
         email: email,
         branch: values.branch || null,
         zone: values.zone || null,
-      })
+      }
+
+      if (mode === "edit") {
+        if (!contractId) {
+          toast.error("Missing contract id")
+          return
+        }
+        const res = await updateContractAction({ id: contractId, ...payload })
+        if (!res.ok) {
+          toast.error(res.error)
+          return
+        }
+        toast.success("Contract updated")
+        router.push(`/dashboard/contracts/${contractId}`)
+        router.refresh()
+        return
+      }
+
+      const res = await createContractAction(payload)
       if (!res.ok) {
         toast.error(res.error)
         return
@@ -275,7 +339,7 @@ export function NewContractForm({ currentUser }: { currentUser: AppUser }) {
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>
           {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-          Create contract
+          {mode === "edit" ? "Save changes" : "Create contract"}
         </Button>
       </div>
     </form>
@@ -291,7 +355,7 @@ function Field({
   label: string
   required?: boolean
   className?: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   const id = label.toLowerCase().replace(/\s+/g, "-")
   return (
