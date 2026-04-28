@@ -14,9 +14,8 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { UserFormFields } from "./user-form-fields"
-import { resetUserPasswordAction, updateUserAction } from "@/app/dashboard/users/actions"
+import { sendUserPasswordResetEmailAction, updateUserAction } from "@/app/dashboard/users/actions"
 import type { AppUser } from "@/lib/types"
 
 export function EditUserDialog({
@@ -37,7 +36,6 @@ export function EditUserDialog({
     zone: null as string | null,
     is_active: true,
   })
-  const [reset, setReset] = useState({ password: "", confirmPassword: "" })
   const [pending, startTransition] = useTransition()
 
   useEffect(() => {
@@ -51,7 +49,6 @@ export function EditUserDialog({
         zone: user.zone,
         is_active: user.is_active,
       })
-      setReset({ password: "", confirmPassword: "" })
     }
   }, [user])
 
@@ -82,25 +79,15 @@ export function EditUserDialog({
     })
   }
 
-  function resetPasswordForUser() {
+  function sendPasswordResetEmail() {
     if (!user) return
-    if (reset.password.length < 6) {
-      toast.error("Password must be at least 6 characters long.")
-      return
-    }
-    if (reset.password !== reset.confirmPassword) {
-      toast.error("Passwords do not match.")
-      return
-    }
-
     startTransition(async () => {
-      const res = await resetUserPasswordAction({ id: user.id, password: reset.password })
+      const res = await sendUserPasswordResetEmailAction({ email: user.email })
       if (!res.ok) {
         toast.error(res.error)
         return
       }
-      toast.success("Password reset")
-      setReset({ password: "", confirmPassword: "" })
+      toast.success("Password reset email sent")
     })
   }
 
@@ -137,48 +124,22 @@ export function EditUserDialog({
             />
           </div>
 
-          <div className="mt-4 rounded-lg border p-3">
+          <div className="mt-4 flex items-center justify-between rounded-lg border p-3">
             <div className="flex flex-col">
               <Label className="text-sm font-medium">Reset password</Label>
               <span className="text-xs text-muted-foreground">
-                Set a new password for this user.
+                Sends a password reset email to the user.
               </span>
             </div>
-
-            <div className="mt-3 grid gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="reset_password">New password</Label>
-                <Input
-                  id="reset_password"
-                  type="password"
-                  value={reset.password}
-                  onChange={(e) => setReset((prev) => ({ ...prev, password: e.target.value }))}
-                  minLength={6}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="reset_confirm_password">Confirm new password</Label>
-                <Input
-                  id="reset_confirm_password"
-                  type="password"
-                  value={reset.confirmPassword}
-                  onChange={(e) =>
-                    setReset((prev) => ({ ...prev, confirmPassword: e.target.value }))
-                  }
-                  minLength={6}
-                />
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={resetPasswordForUser}
-                disabled={pending || reset.password.length === 0}
-              >
-                {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                Reset password
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={sendPasswordResetEmail}
+              disabled={pending}
+            >
+              {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
+              Send reset email
+            </Button>
           </div>
 
           <DialogFooter className="mt-6">

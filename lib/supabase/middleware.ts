@@ -30,7 +30,7 @@ export async function updateSession(request: NextRequest) {
 
   // Allow these auth routes to render even for authenticated users so we
   // never trap the browser in a bounce loop.
-  const alwaysAllowedAuthRoutes = ["/auth/no-access", "/auth/logout"]
+  const alwaysAllowedAuthRoutes = ["/auth/no-access", "/auth/logout", "/auth/reset-password"]
   const isAlwaysAllowed = alwaysAllowedAuthRoutes.some((p) => pathname.startsWith(p))
 
   if (!user && !isPublic) {

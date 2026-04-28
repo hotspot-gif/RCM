@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 import { createClient as createPlainClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/env"
@@ -118,35 +119,30 @@ export async function deleteUserAction(id: string): Promise<ActionResult> {
   }
 }
 
-export async function resetUserPasswordAction(input: {
-  id: string
-  password: string
+async function getOriginFromHeaders(): Promise<string | null> {
+  const h = await headers()
+  const proto = h.get("x-forwarded-proto") ?? "http"
+  const host = h.get("x-forwarded-host") ?? h.get("host")
+  if (!host) return null
+  return `${proto}://${host}`
+}
+
+export async function sendUserPasswordResetEmailAction(input: {
+  email: string
 }): Promise<ActionResult> {
   try {
     await requireAdmin()
-    if (input.password.length < 6) {
-      return { ok: false, error: "Password must be at least 6 characters long." }
-    }
+    const origin = await getOriginFromHeaders()
+    const redirectTo = origin ? `${origin}/auth/reset-password` : undefined
 
-    const serviceRoleKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ??
-      process.env.SUPABASE_SERVICE_ROLE ??
-      ""
-
-    if (!serviceRoleKey) {
-      return {
-        ok: false,
-        error: "Missing SUPABASE_SERVICE_ROLE_KEY on the server. Add it to your environment to enable admin password resets.",
-      }
-    }
-
-    const adminClient = createPlainClient(SUPABASE_URL, serviceRoleKey, {
+    const standalone = createPlainClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
-    const { error } = await adminClient.auth.admin.updateUserById(input.id, {
-      password: input.password,
-    })
+    const { error } = await standalone.auth.resetPasswordForEmail(
+      input.email,
+      redirectTo ? { redirectTo } : undefined,
+    )
 
     if (error) return { ok: false, error: error.message }
     return { ok: true }
