@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import { updatePasswordAction } from "@/app/auth/actions"
+import { createClient } from "@/lib/supabase/client"
 
 export function PasswordChangeForm() {
   const [pending, startTransition] = useTransition()
@@ -31,12 +31,13 @@ export function PasswordChangeForm() {
     }
 
     startTransition(async () => {
-      const res = await updatePasswordAction(formData.password)
-      if (res.ok) {
+      const supabase = createClient()
+      const { error } = await supabase.auth.updateUser({ password: formData.password })
+      if (!error) {
         toast.success("Password updated successfully")
         setFormData({ password: "", confirmPassword: "" })
       } else {
-        toast.error(res.error || "Failed to update password")
+        toast.error(error.message || "Failed to update password")
       }
     })
   }

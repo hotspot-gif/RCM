@@ -117,3 +117,40 @@ export async function deleteUserAction(id: string): Promise<ActionResult> {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
   }
 }
+
+export async function resetUserPasswordAction(input: {
+  id: string
+  password: string
+}): Promise<ActionResult> {
+  try {
+    await requireAdmin()
+    if (input.password.length < 6) {
+      return { ok: false, error: "Password must be at least 6 characters long." }
+    }
+
+    const serviceRoleKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ??
+      process.env.SUPABASE_SERVICE_ROLE ??
+      ""
+
+    if (!serviceRoleKey) {
+      return {
+        ok: false,
+        error: "Missing SUPABASE_SERVICE_ROLE_KEY on the server. Add it to your environment to enable admin password resets.",
+      }
+    }
+
+    const adminClient = createPlainClient(SUPABASE_URL, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    const { error } = await adminClient.auth.admin.updateUserById(input.id, {
+      password: input.password,
+    })
+
+    if (error) return { ok: false, error: error.message }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
