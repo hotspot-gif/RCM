@@ -11,16 +11,15 @@
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #EEF1F8;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 16px;
+      margin: 0;
+      padding: 0;
     }
 
     .email-wrapper {
       width: 100%;
       max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 16px;
     }
 
     /* ── PRE-HEADER ── */
@@ -45,9 +44,6 @@
     .header {
       background: linear-gradient(135deg, #21264E 0%, #2D3470 100%);
       padding: 26px 36px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
       position: relative;
       overflow: hidden;
     }
@@ -61,7 +57,8 @@
     .header-logo {
       height: 36px;
       width: auto;
-      flex-shrink: 0;
+      display: inline-block;
+      vertical-align: middle;
       position: relative;
       z-index: 1;
     }
@@ -69,13 +66,17 @@
       width: 1px;
       height: 36px;
       background: rgba(255,255,255,0.18);
-      flex-shrink: 0;
+      display: inline-block;
+      vertical-align: middle;
+      margin: 0 14px;
       position: relative;
       z-index: 1;
     }
     .header-text {
       position: relative;
       z-index: 1;
+      display: inline-block;
+      vertical-align: middle;
     }
     .header-title {
       color: #ffffff;
@@ -92,8 +93,9 @@
       font-weight: 400;
     }
     .header-badge {
-      margin-left: auto;
-      position: relative;
+      position: absolute;
+      top: 22px;
+      right: 36px;
       z-index: 1;
       background: rgba(0, 106, 224, 0.25);
       border: 1px solid rgba(91, 157, 239, 0.4);
@@ -112,14 +114,12 @@
       background: #F4F7FF;
       border-bottom: 1px solid #DDE3EF;
       padding: 11px 36px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
     .topic-icon {
       width: 18px;
       height: 18px;
-      flex-shrink: 0;
+      display: inline-block;
+      vertical-align: middle;
       color: #006AE0;
     }
     .topic-text {
@@ -127,6 +127,9 @@
       color: #4A5568;
       font-weight: 500;
       letter-spacing: 0.01em;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 8px;
     }
     .topic-text strong {
       color: #21264E;
@@ -182,54 +185,49 @@
       font-weight: 600;
     }
 
-    .otp-digits {
-      text-align: center;
-      font-size: 0;
-      margin: 0 0 16px;
-    }
-
-    .otp-digit {
-      display: inline-block;
-      vertical-align: middle;
-      width: 50px;
-      height: 60px;
-      font-size: 28px;
+    .otp-table { border-collapse: separate; border-spacing: 6px 0; }
+    .otp-table td { vertical-align: middle; }
+    .otp-cell {
+      width: 44px;
+      height: 56px;
+      font-size: 26px;
       font-weight: 700;
       font-family: 'JetBrains Mono', 'Courier New', monospace;
       color: #21264E;
       background: #ffffff;
       border: 1.5px solid #006AE0;
       border-radius: 10px;
-      line-height: 60px;
+      line-height: 56px;
       mso-line-height-rule: exactly;
       text-align: center;
-      letter-spacing: 0;
-      margin: 0 4px;
     }
-
-    .otp-sep {
-      display: inline-block;
-      vertical-align: middle;
-      width: 14px;
-      height: 60px;
-      line-height: 60px;
+    .otp-sep-cell {
+      width: 10px;
+      height: 56px;
+      line-height: 56px;
       mso-line-height-rule: exactly;
       text-align: center;
       font-size: 22px;
       color: #B0BDD0;
       font-weight: 300;
-      user-select: none;
     }
 
     .otp-expiry {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      display: inline-block;
       background: #FFF8E1;
       border: 1px solid #F5D98A;
       border-radius: 20px;
       padding: 5px 14px;
       margin-top: 6px;
+    }
+    .otp-expiry svg {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    .otp-expiry span {
+      display: inline-block;
+      vertical-align: middle;
     }
     .otp-expiry span {
       font-size: 12px;
@@ -287,16 +285,19 @@
       border: 1px solid #FCC8C8;
       border-left: 4px solid #D93025;
       padding: 14px 16px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
       margin-bottom: 24px;
     }
     .security-icon {
-      flex-shrink: 0;
+      display: inline-block;
+      vertical-align: top;
       margin-top: 1px;
     }
     .security-text {
+      display: inline-block;
+      vertical-align: top;
+      width: auto;
+      max-width: 520px;
+      margin-left: 10px;
       font-size: 12.5px;
       color: #6B2020;
       line-height: 1.65;
@@ -309,9 +310,7 @@
 
     /* ── META GRID ── */
     .meta-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      display: block;
       margin-bottom: 24px;
     }
     .meta-card {
@@ -327,9 +326,6 @@
       letter-spacing: 0.09em;
       font-weight: 600;
       margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
     }
     .meta-value {
       font-size: 13px;
@@ -357,21 +353,15 @@
       padding: 18px 36px;
     }
     .footer-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
       margin-bottom: 14px;
     }
     .footer-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      display: inline-block;
       font-size: 10.5px;
       color: #6B7A94;
       font-weight: 500;
     }
+    .footer-badge .dot { margin-right: 6px; }
     .footer-badge .dot {
       width: 6px;
       height: 6px;
@@ -384,19 +374,18 @@
       font-size: 10.5px;
       color: #9AA5B8;
       font-style: italic;
+      display: block;
+      margin-top: 6px;
     }
     .footer-bottom {
       border-top: 1px solid #DDE3EF;
       padding-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 6px;
     }
     .footer-legal {
       font-size: 10.5px;
       color: #9AA5B8;
       line-height: 1.5;
+      display: block;
     }
 
     /* ── POST-CARD NOTE ── */
@@ -414,10 +403,10 @@
       .topic-strip { padding: 10px 20px; }
       .body { padding: 28px 20px 20px; }
       .footer { padding: 16px 20px; }
-      .footer-top { flex-direction: column; align-items: flex-start; }
-      .footer-bottom { flex-direction: column; }
-      .meta-grid { grid-template-columns: 1fr; }
-      .otp-digit { width: 42px; height: 52px; font-size: 24px; }
+      .meta-grid { display: block; }
+      .otp-table { border-spacing: 4px 0; }
+      .otp-cell { width: 36px; height: 46px; line-height: 46px; font-size: 22px; }
+      .otp-sep-cell { width: 8px; height: 46px; line-height: 46px; font-size: 18px; }
     }
   </style>
 </head>

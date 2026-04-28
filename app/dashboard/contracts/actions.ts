@@ -258,11 +258,12 @@ function escapeHtml(input: string) {
 
 function renderOtpDigitsHtml(otp: string) {
   const digits = otp.replaceAll(/\D/g, "").slice(0, 6).padStart(6, "0").split("")
-  const parts = digits.map((d, i) => {
-    if (i === 3) return `<span class="otp-sep">·</span><span class="otp-digit">${d}</span>`
-    return `<span class="otp-digit">${d}</span>`
+  const cells = digits.map((d, i) => {
+    if (i === 3) return `<td class="otp-sep-cell">·</td><td class="otp-cell">${d}</td>`
+    return `<td class="otp-cell">${d}</td>`
   })
-  return parts.join("")
+
+  return `<table role="presentation" class="otp-table" cellspacing="0" cellpadding="0" border="0" align="center"><tr>${cells.join("")}</tr></table>`
 }
 
 async function buildContractOtpEmailHtml(input: {
@@ -287,7 +288,7 @@ async function buildContractOtpEmailHtml(input: {
       `<div class="otp-digits">${renderOtpDigitsHtml(safeOtp)}</div>`,
     )
 
-    return withDigits.replace(/const otp = '(\d{6})';/, `const otp = '${safeOtp}';`)
+    return withDigits
   } catch {
     const safeName = escapeHtml(input.contactFirstName || "Retailer")
     const safeOtp = input.otp.replaceAll(/\D/g, "").slice(0, 6).padStart(6, "0")
