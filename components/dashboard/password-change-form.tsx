@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { createClient } from "@/lib/supabase/client"
-import { updatePasswordAction } from "@/app/auth/actions"
 
 export function PasswordChangeForm() {
   const [pending, startTransition] = useTransition()
@@ -34,18 +33,10 @@ export function PasswordChangeForm() {
     startTransition(async () => {
       try {
         const supabase = createClient()
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+        const sessionResult = await supabase.auth.getSession()
 
-        if (!session) {
-          const res = await updatePasswordAction(formData.password)
-          if (res.ok) {
-            toast.success("Password updated successfully")
-            setFormData({ password: "", confirmPassword: "" })
-          } else {
-            toast.error(res.error || "Failed to update password")
-          }
+        if (!sessionResult.data?.session) {
+          toast.error("Unable to update password: there is no active session. Please sign in again.")
           return
         }
 
@@ -57,12 +48,18 @@ export function PasswordChangeForm() {
         }
 
         const msg =
-          typeof error?.message === "string" && error.message.trim().length > 0
+          typeof error.message === "string" && error.message.trim().length > 0
             ? error.message
-            : JSON.stringify(error)
+            : JSON.stringify(error, Object.getOwnPropertyNames(error)) || String(error)
         toast.error(msg || "Failed to update password")
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : JSON.stringify(e))
+        const msg =
+          e instanceof Error
+            ? e.message
+            : typeof e === "string"
+            ? e
+            : JSON.stringify(e, Object.getOwnPropertyNames(e)) || String(e) || "Failed to update password"
+        toast.error(msg)
       }
     })
   }
