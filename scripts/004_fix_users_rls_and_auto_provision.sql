@@ -148,7 +148,13 @@ create policy "contracts_update" on public.contracts for update using (
 );
 
 create policy "contracts_delete_admin" on public.contracts for delete
-  using (public.is_admin());
+  using (
+    public.is_admin()
+    or (
+      public.current_user_role() = 'RSM'
+      and contracts.branch = any(public.current_user_branches())
+    )
+  );
 
 -- ---- 4. Auto-provision a public.users row on auth signup -------
 -- First user ever becomes ADMIN; subsequent users default to FSE

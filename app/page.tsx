@@ -127,7 +127,7 @@ export default async function HomePage() {
                 ))}
               </ul>
               <Button asChild className="w-full bg-brand-cyan text-brand-navy font-bold hover:bg-brand-cyan/90 group-hover:gap-3 transition-all">
-                <Link href="https://hs-ita.vercel.app/" target="_blank" className="flex items-center justify-center">
+                <Link href="https://fiq.lycaops.com/" target="_blank" className="flex items-center justify-center">
                   Launch Field IQ
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Link>

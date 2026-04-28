@@ -184,5 +184,16 @@ create policy "contracts_update" on public.contracts for update using (
 
 drop policy if exists "contracts_delete_admin" on public.contracts;
 create policy "contracts_delete_admin" on public.contracts for delete using (
-  exists (select 1 from public.users u where u.id = auth.uid() and u.role = 'ADMIN')
+  exists (
+    select 1
+    from public.users u
+    where u.id = auth.uid()
+      and (
+        u.role = 'ADMIN'
+        or (
+          u.role = 'RSM'
+          and contracts.branch = any(coalesce(u.branches, array[]::text[]))
+        )
+      )
+  )
 );
