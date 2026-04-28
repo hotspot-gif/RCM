@@ -46,19 +46,18 @@ export function UsersTable({ users }: { users: AppUser[] }) {
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Branch</TableHead>
-              <TableHead>Zone</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-12" aria-label="Actions" />
-            </TableRow>
-          </TableHeader>
+      <Table className="min-w-[720px]">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Branch</TableHead>
+            <TableHead>Zone</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="w-12" aria-label="Actions" />
+          </TableRow>
+        </TableHeader>
           <TableBody>
             {users.map((u) => (
               <TableRow key={u.id}>
@@ -124,7 +123,6 @@ export function UsersTable({ users }: { users: AppUser[] }) {
             ))}
           </TableBody>
         </Table>
-      </div>
 
       <EditUserDialog
         user={editing}
