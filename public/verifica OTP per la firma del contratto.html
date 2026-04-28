@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OTP Verification Email — Lycamobile Retailer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #EEF1F8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .email-wrapper {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* ── PRE-HEADER ── */
+    .preheader {
+      font-size: 11px;
+      color: #8A95A8;
+      text-align: center;
+      margin-bottom: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #DDE3EF;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(33, 38, 78, 0.08), 0 1px 4px rgba(33, 38, 78, 0.04);
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(135deg, #21264E 0%, #2D3470 100%);
+      padding: 26px 36px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.025'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .header-logo {
+      height: 36px;
+      width: auto;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .header-divider {
+      width: 1px;
+      height: 36px;
+      background: rgba(255,255,255,0.18);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .header-text {
+      position: relative;
+      z-index: 1;
+    }
+    .header-title {
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      line-height: 1.3;
+    }
+    .header-subtitle {
+      color: #5B9DEF;
+      font-size: 11.5px;
+      margin-top: 3px;
+      letter-spacing: 0.02em;
+      font-weight: 400;
+    }
+    .header-badge {
+      margin-left: auto;
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 106, 224, 0.25);
+      border: 1px solid rgba(91, 157, 239, 0.4);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 10.5px;
+      color: #93C2F7;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── TOPIC STRIP ── */
+    .topic-strip {
+      background: #F4F7FF;
+      border-bottom: 1px solid #DDE3EF;
+      padding: 11px 36px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .topic-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      color: #006AE0;
+    }
+    .topic-text {
+      font-size: 12px;
+      color: #4A5568;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+    .topic-text strong {
+      color: #21264E;
+    }
+
+    /* ── BODY ── */
+    .body {
+      padding: 36px 36px 28px;
+    }
+
+    .greeting-name {
+      font-size: 15.5px;
+      color: #1A202C;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .greeting-name span {
+      color: #006AE0;
+    }
+    .greeting-text {
+      font-size: 13.5px;
+      color: #5A6578;
+      line-height: 1.75;
+      margin-bottom: 28px;
+    }
+
+    /* ── OTP BLOCK ── */
+    .otp-block {
+      background: linear-gradient(160deg, #F8FAFF 0%, #F0F4FF 100%);
+      border-radius: 14px;
+      border: 1px solid #C8D8F5;
+      padding: 28px 24px 22px;
+      text-align: center;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .otp-block::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, rgba(0,106,224,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .otp-label {
+      font-size: 10.5px;
+      color: #7A8BA6;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+
+    .otp-digits {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .otp-digit {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 60px;
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      color: #21264E;
+      background: #ffffff;
+      border: 1.5px solid #006AE0;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 106, 224, 0.12), 0 0 0 3px rgba(0, 106, 224, 0.06);
+      transition: transform 0.15s;
+      letter-spacing: 0;
+    }
+
+    .otp-sep {
+      color: #B0BDD0;
+      font-size: 22px;
+      font-weight: 300;
+      line-height: 1;
+      margin: 0 2px;
+      user-select: none;
+    }
+
+    .otp-expiry {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #FFF8E1;
+      border: 1px solid #F5D98A;
+      border-radius: 20px;
+      padding: 5px 14px;
+      margin-top: 6px;
+    }
+    .otp-expiry span {
+      font-size: 12px;
+      color: #7A4F0A;
+      font-weight: 500;
+    }
+    .otp-expiry strong {
+      color: #5C3608;
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #DDE3EF 20%, #DDE3EF 80%, transparent);
+      margin: 24px 0;
+    }
+
+    /* ── STEPS ── */
+    .steps-label {
+      font-size: 11px;
+      color: #7A8BA6;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .steps-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      background: #006AE0;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .step-text {
+      font-size: 13px;
+      color: #4A5568;
+      line-height: 1.6;
+    }
+
+    /* ── SECURITY NOTICE ── */
+    .security-notice {
+      background: #FFF5F5;
+      border-radius: 10px;
+      border: 1px solid #FCC8C8;
+      border-left: 4px solid #D93025;
+      padding: 14px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+    .security-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .security-text {
+      font-size: 12.5px;
+      color: #6B2020;
+      line-height: 1.65;
+    }
+    .security-text strong {
+      color: #8B1A1A;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    /* ── META GRID ── */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .meta-card {
+      background: #F8FAFF;
+      border: 1px solid #DDE3EF;
+      border-radius: 10px;
+      padding: 13px 15px;
+    }
+    .meta-label {
+      font-size: 10px;
+      color: #8A95A8;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .meta-value {
+      font-size: 13px;
+      color: #1A202C;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── SUPPORT LINE ── */
+    .support-line {
+      font-size: 13px;
+      color: #5A6578;
+      line-height: 1.7;
+    }
+    .support-line a {
+      color: #006AE0;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      background: #F4F7FF;
+      border-top: 1px solid #DDE3EF;
+      padding: 18px 36px;
+    }
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .footer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+      color: #6B7A94;
+      font-weight: 500;
+    }
+    .footer-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22C55E;
+      display: inline-block;
+      box-shadow: 0 0 0 2px rgba(34,197,94,0.2);
+    }
+    .footer-norely {
+      font-size: 10.5px;
+      color: #9AA5B8;
+      font-style: italic;
+    }
+    .footer-bottom {
+      border-top: 1px solid #DDE3EF;
+      padding-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .footer-legal {
+      font-size: 10.5px;
+      color: #9AA5B8;
+      line-height: 1.5;
+    }
+
+    /* ── POST-CARD NOTE ── */
+    .post-note {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 11px;
+      color: #9AA5B8;
+      letter-spacing: 0.02em;
+    }
+
+    @media (max-width: 560px) {
+      .header { padding: 20px 20px; }
+      .header-badge { display: none; }
+      .topic-strip { padding: 10px 20px; }
+      .body { padding: 28px 20px 20px; }
+      .footer { padding: 16px 20px; }
+      .footer-top { flex-direction: column; align-items: flex-start; }
+      .footer-bottom { flex-direction: column; }
+      .meta-grid { grid-template-columns: 1fr; }
+      .otp-digit { width: 42px; height: 52px; font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="email-wrapper">
+
+    <p class="preheader">Il tuo codice OTP per la generazione del contratto Lycamobile Retailer</p>
+
+    <div class="card">
+
+      <!-- ── HEADER ── -->
+      <div class="header">
+        <img
+          src="https://eef221ebb9.imgdist.com/pub/bfra/85md611j/2vz/vdh/2hp/uslogo.png"
+          class="header-logo"
+          alt="Universal Service Logo"
+        />
+        <div class="header-divider"></div>
+        <div class="header-text">
+          <div class="header-title">Universal Service 2006 SRL</div>
+          <div class="header-subtitle">Rete Retailer Lycamobile &mdash; Contrattualistica</div>
+        </div>
+        <div class="header-badge">Verifica Identità</div>
+      </div>
+
+      <!-- ── TOPIC STRIP ── -->
+      <div class="topic-strip">
+        <svg class="topic-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 2L3 5.5V10c0 4.418 3.134 7.55 7 8.5C16.866 17.55 20 14.418 20 10V5.5L10 2Z" stroke="#006AE0" stroke-width="1.4" fill="none"/>
+          <path d="M7 10l2 2 4-4" stroke="#006AE0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="topic-text">Oggetto: <strong>Codice di verifica OTP per la firma del contratto di affiliazione</strong></span>
+      </div>
+
+      <!-- ── BODY ── -->
+      <div class="body">
+
+        <p class="greeting-name">Gentile <span>[Nome Retailer]</span>,</p>
+        <p class="greeting-text">
+          Hai avviato il processo di generazione del contratto come partner retailer <strong style="color:#21264E;">Lycamobile Italia</strong>.
+          Per procedere e completare la firma digitale del contratto di affiliazione, inserisci il codice di verifica riportato di seguito.
+        </p>
+
+        <!-- OTP BLOCK -->
+        <div class="otp-block">
+          <p class="otp-label">Codice di verifica — OTP</p>
+          <div class="otp-digits">
+            <span class="otp-digit">8</span>
+            <span class="otp-digit">4</span>
+            <span class="otp-digit">2</span>
+            <span class="otp-sep">·</span>
+            <span class="otp-digit">7</span>
+            <span class="otp-digit">1</span>
+            <span class="otp-digit">9</span>
+          </div>
+          <div class="otp-expiry">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6.5" stroke="#C38A1A" stroke-width="1.4"/>
+              <path d="M8 4.5V8.5L10.5 10" stroke="#C38A1A" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            <span>Scade tra <strong>10 minuti</strong></span>
+          </div>
+        </div>
+
+        <!-- STEPS -->
+        <p class="steps-label">Come utilizzare il codice</p>
+        <ul class="steps-list">
+          <li class="step-item">
+            <span class="step-num">1</span>
+            <span class="step-text">Torna alla pagina di generazione contratto.</span>
+          </li>
+          <li class="step-item">
+            <span class="step-num">2</span>
+            <span class="step-text">Inserisci il codice OTP nel campo di verifica apposito.</span>
+          </li>
+          <li class="step-item">
+            <span class="step-num">3</span>
+            <span class="step-text">Conferma per autenticare la tua identità e completare la firma digitale.</span>
+          </li>
+        </ul>
+
+        <div class="section-divider"></div>
+
+        <!-- SECURITY NOTICE -->
+        <div class="security-notice">
+          <svg class="security-icon" width="18" height="18" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1.5L1.5 4.5V8c0 3.5 2.5 6 6.5 7.5C12 14 14.5 11.5 14.5 8V4.5L8 1.5Z" stroke="#C0392B" stroke-width="1.3"/>
+            <path d="M8 5.5V8.5" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="8" cy="10.5" r="0.6" fill="#C0392B"/>
+          </svg>
+          <div class="security-text">
+            <strong>⚠ Avviso di sicurezza</strong>
+            Lycamobile Italia non chiederà mai questo codice via telefono, SMS o chat. Il codice OTP deve essere condiviso esclusivamente con il Responsabile di Zona incaricato della raccolta della firma. Non condividerlo con nessun altro, nemmeno con operatori che si presentano come nostri agenti. Se non hai avviato tu questa richiesta, ignora questa email e contatta immediatamente il tuo referente commerciale.
+          </div>
+        </div>
+
+        <!-- META GRID -->
+
+        <p class="support-line">
+          Per assistenza contatta il tuo referente commerciale Lycamobile o scrivi a
+          <a href="mailto:retailersupport@lycamobile.it">retailersupport@lycamobile.it</a>
+        </p>
+
+      </div>
+
+      <!-- ── FOOTER ── -->
+      <div class="footer">
+        <div class="footer-top">
+          <span class="footer-badge">
+            <span class="dot"></span>
+            Authorised Lycamobile Distributor
+          </span>
+          <span class="footer-norely">Email automatica — non rispondere a questo messaggio</span>
+        </div>
+        <div class="footer-bottom">
+          <span class="footer-legal">Universal Service 2006 S.R.L &nbsp;·&nbsp; Via Genzano 195, 00179 Roma</span>
+          <span class="footer-legal">P.IVA: IT 09037721009</span>
+          <span class="footer-legal">© 2025 Universal Service 2006 SRL</span>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="post-note">
+      Ricevi questa email perché hai avviato una procedura di firma contratto sul portale Lycamobile Retailer.
+    </p>
+
+  </div>
+
+</body>
+</html>

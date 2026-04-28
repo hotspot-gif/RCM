@@ -247,6 +247,54 @@ function hashOtp(otp: string, salt: string) {
   return crypto.createHash("sha256").update(`${salt}:${otp}`).digest("hex")
 }
 
+function escapeHtml(input: string) {
+  return input
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+}
+
+function renderOtpDigitsHtml(otp: string) {
+  const digits = otp.replaceAll(/\D/g, "").slice(0, 6).padStart(6, "0").split("")
+  const parts = digits.map((d, i) => {
+    if (i === 3) return `<span class="otp-sep">·</span><span class="otp-digit">${d}</span>`
+    return `<span class="otp-digit">${d}</span>`
+  })
+  return parts.join("")
+}
+
+async function buildContractOtpEmailHtml(input: {
+  contactFirstName: string
+  otp: string
+}) {
+  try {
+    const templatePath = path.join(
+      process.cwd(),
+      "public",
+      "verifica OTP per la firma del contratto.html",
+    )
+    const raw = await readFile(templatePath, "utf8")
+
+    const safeName = escapeHtml(input.contactFirstName || "Retailer")
+    const safeOtp = input.otp.replaceAll(/\D/g, "").slice(0, 6).padStart(6, "0")
+
+    const withName = raw.replaceAll("[Nome Retailer]", safeName)
+
+    const withDigits = withName.replace(
+      /<div class="otp-digits">[\s\S]*?<\/div>/,
+      `<div class="otp-digits">${renderOtpDigitsHtml(safeOtp)}</div>`,
+    )
+
+    return withDigits.replace(/const otp = '(\d{6})';/, `const otp = '${safeOtp}';`)
+  } catch {
+    const safeName = escapeHtml(input.contactFirstName || "Retailer")
+    const safeOtp = input.otp.replaceAll(/\D/g, "").slice(0, 6).padStart(6, "0")
+    return `<p>Gentile ${safeName},</p><p>Il tuo codice OTP è: <strong>${safeOtp}</strong></p><p>Il codice scade tra 10 minuti.</p>`
+  }
+}
+
 export async function requestContractOtpAction(
   id: string,
 ): Promise<ActionResult<{ sentTo: string }>> {
@@ -294,6 +342,10 @@ export async function requestContractOtpAction(
     if (updErr) return { ok: false, error: updErr.message }
 
     const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
+    const html = await buildContractOtpEmailHtml({
+      contactFirstName: contract.contact_first_name ?? "",
+      otp,
+    })
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -303,7 +355,8 @@ export async function requestContractOtpAction(
       body: JSON.stringify({
         from,
         to: [contract.email],
-        subject: "OTP verification code",
+        subject: "Codice di verifica OTP per la firma del contratto",
+        html,
         text: `Gentile ${contract.contact_first_name},\n\nIl tuo codice OTP è: ${otp}\n\nIl codice scade tra 10 minuti.\n\nGrazie,\nUniversal Service 2006 S.R.L`,
       }),
     })
