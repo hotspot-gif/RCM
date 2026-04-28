@@ -18,11 +18,19 @@ export default function ResetPasswordPage() {
   const [formData, setFormData] = useState({ password: "", confirmPassword: "" })
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data }) => {
-      setHasSession(!!data.session)
+    const initSession = async () => {
+      const supabase = createClient()
+      const { data: urlData, error: urlError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
+      if (urlError) {
+        console.warn("Unable to parse Supabase reset session from URL:", urlError)
+      }
+
+      const session = urlData?.session ?? (await supabase.auth.getSession()).data.session
+      setHasSession(!!session)
       setReady(true)
-    })
+    }
+
+    initSession()
   }, [])
 
   function submit(e: React.FormEvent) {
@@ -44,14 +52,20 @@ export default function ResetPasswordPage() {
           const msg =
             typeof error?.message === "string" && error.message.trim().length > 0
               ? error.message
-              : JSON.stringify(error)
+              : JSON.stringify(error, Object.getOwnPropertyNames(error)) || String(error)
           toast.error(msg || "Failed to update password")
           return
         }
         toast.success("Password updated successfully")
         setFormData({ password: "", confirmPassword: "" })
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : JSON.stringify(err))
+        const msg =
+          err instanceof Error
+            ? err.message
+            : typeof err === "string"
+            ? err
+            : JSON.stringify(err, Object.getOwnPropertyNames(err)) || String(err) || "Failed to update password"
+        toast.error(msg)
       }
     })
   }
