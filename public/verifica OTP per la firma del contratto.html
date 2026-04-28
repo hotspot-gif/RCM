@@ -183,18 +183,14 @@
     }
 
     .otp-digits {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
+      text-align: center;
+      font-size: 0;
+      margin: 0 0 16px;
     }
 
     .otp-digit {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-block;
+      vertical-align: middle;
       width: 50px;
       height: 60px;
       font-size: 28px;
@@ -204,17 +200,24 @@
       background: #ffffff;
       border: 1.5px solid #006AE0;
       border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 106, 224, 0.12), 0 0 0 3px rgba(0, 106, 224, 0.06);
-      transition: transform 0.15s;
+      line-height: 60px;
+      mso-line-height-rule: exactly;
+      text-align: center;
       letter-spacing: 0;
+      margin: 0 4px;
     }
 
     .otp-sep {
-      color: #B0BDD0;
+      display: inline-block;
+      vertical-align: middle;
+      width: 14px;
+      height: 60px;
+      line-height: 60px;
+      mso-line-height-rule: exactly;
+      text-align: center;
       font-size: 22px;
+      color: #B0BDD0;
       font-weight: 300;
-      line-height: 1;
-      margin: 0 2px;
       user-select: none;
     }
 
@@ -255,31 +258,23 @@
     }
     .steps-list {
       list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      display: block;
+      padding: 0;
       margin-bottom: 24px;
     }
     .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
+      display: block;
+      margin-bottom: 10px;
     }
     .step-num {
-      flex-shrink: 0;
-      width: 22px;
-      height: 22px;
-      background: #006AE0;
-      color: #fff;
-      border-radius: 50%;
-      font-size: 11px;
+      display: inline;
+      color: #006AE0;
+      font-size: 13px;
       font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 1px;
+      margin-right: 6px;
     }
     .step-text {
+      display: inline;
       font-size: 13px;
       color: #4A5568;
       line-height: 1.6;
@@ -492,15 +487,15 @@
         <p class="steps-label">Come utilizzare il codice</p>
         <ul class="steps-list">
           <li class="step-item">
-            <span class="step-num">1</span>
+            <span class="step-num">1.</span>
             <span class="step-text">Torna alla pagina di generazione contratto.</span>
           </li>
           <li class="step-item">
-            <span class="step-num">2</span>
+            <span class="step-num">2.</span>
             <span class="step-text">Inserisci il codice OTP nel campo di verifica apposito.</span>
           </li>
           <li class="step-item">
-            <span class="step-num">3</span>
+            <span class="step-num">3.</span>
             <span class="step-text">Conferma per autenticare la tua identità e completare la firma digitale.</span>
           </li>
         </ul>
