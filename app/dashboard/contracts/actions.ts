@@ -568,12 +568,62 @@ export async function sendContractEmailAction(
       }
     }
 
+    const escapeHtml = (input: string) =>
+      input
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;")
+
+    const formatDate = (iso: string) => {
+      const d = new Date(iso)
+      if (Number.isNaN(d.getTime())) return ""
+      return d.toLocaleDateString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    }
+
+    const retailerName = `${contract.contact_first_name ?? ""} ${contract.contact_last_name ?? ""}`.trim()
+    const retailerCode = (contract.id ?? "").split("-")[0]?.toUpperCase() ?? ""
+    const signDate = contract.signed_at
+      ? formatDate(contract.signed_at)
+      : new Date().toLocaleDateString("it-IT")
+
+    let html: string | undefined
+    try {
+      const templatePath = path.join(
+        process.cwd(),
+        "public",
+        "Contratto di Affiliazione.html",
+      )
+      const raw = await readFile(templatePath, "utf8")
+      html = raw
+        .replaceAll("{{{RETAILER_NAME}}}", escapeHtml(retailerName || ""))
+        .replaceAll("{{{COMPANY_NAME}}}", escapeHtml(contract.company_name || ""))
+        .replaceAll("{{{RETAILER_CODE}}}", escapeHtml(retailerCode || ""))
+        .replaceAll("{{{SIGN_DATE}}}", escapeHtml(signDate || ""))
+        .replaceAll(
+          "{{{CONTRACT_TYPE}}}",
+          escapeHtml("Contratto di Affiliazione"),
+        )
+        .replaceAll("{{{VAT_NUMBER}}}", escapeHtml(contract.vat_number || ""))
+    } catch {
+      html = undefined
+    }
+
     // Download PDF bytes
     const pdfBytes = await downloadFromStorage("contracts", contract.pdf_path)
     const base64 = Buffer.from(pdfBytes).toString("base64")
 
     const recipients = [contract.email, user.email].filter(Boolean)
     const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
+    const safeRetailerCode = (retailerCode || "CONTRATTO").replace(
+      /[^A-Za-z0-9_-]/g,
+      "-",
+    )
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -585,10 +635,11 @@ export async function sendContractEmailAction(
         from,
         to: recipients,
         subject: `Contratto firmato — ${contract.company_name}`,
+        ...(html ? { html } : {}),
         text: `Gentile ${contract.contact_first_name},\n\nin allegato trovate il contratto firmato relativo al punto vendita "${contract.shop_name}".\n\nGrazie,\nUniversal Service 2006 S.R.L`,
         attachments: [
           {
-            filename: `contratto-${contract.company_name.replace(/\s+/g, "-")}.pdf`,
+            filename: `Contratto_Affiliazione_${safeRetailerCode}.pdf`,
             content: base64,
           },
         ],
