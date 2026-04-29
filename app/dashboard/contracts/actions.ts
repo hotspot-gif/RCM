@@ -349,10 +349,9 @@ async function buildContractOtpEmailHtml(input: {
     const safeOtp = input.otp.replaceAll(/\D/g, "").slice(0, 6).padStart(6, "0")
 
     const withName = raw.replaceAll("[Nome Retailer]", safeName)
-
-    const withDigits = withName.replace(
-      /<div class="otp-digits">[\s\S]*?<\/div>/,
-      `<div class="otp-digits">${renderOtpDigitsHtml(safeOtp)}</div>`,
+    const withDigits = withName.replaceAll(
+      "[OTP_DIGITS]",
+      renderOtpDigitsHtml(safeOtp),
     )
 
     return withDigits
