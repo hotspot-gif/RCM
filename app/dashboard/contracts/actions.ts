@@ -240,6 +240,7 @@ export async function finalizeContractAction(input: {
     ])
 
     const fullName = `${contract.contact_first_name} ${contract.contact_last_name}`.trim()
+    const signedAtIso = new Date().toISOString()
     const fields: ContractFields = {
       companyName: contract.company_name,
       vatNumber: contract.vat_number,
@@ -256,7 +257,7 @@ export async function finalizeContractAction(input: {
       city: contract.city,
       postCode: contract.post_code,
       email: contract.email,
-      date: new Date().toLocaleDateString("it-IT"),
+      date: new Date(signedAtIso).toLocaleDateString("it-IT"),
     }
 
     const pdfBytes = await buildContractPdf({
@@ -271,6 +272,8 @@ export async function finalizeContractAction(input: {
         email: contract.email,
         verifiedAtIso: contract.otp_verified_at,
       },
+      contractId: input.id,
+      staffSignedAtIso: signedAtIso,
     })
 
     const pdfPath = `${input.id}/contract-${Date.now()}.pdf`
@@ -290,7 +293,7 @@ export async function finalizeContractAction(input: {
         staff_signature_path: staffPath,
         pdf_path: pdfPath,
         status: "SIGNED",
-        signed_at: new Date().toISOString(),
+        signed_at: signedAtIso,
       })
       .eq("id", input.id)
 
