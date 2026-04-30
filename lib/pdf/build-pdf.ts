@@ -364,66 +364,97 @@ export async function buildContractPdf({
     const staffSignedAt = formatTimestamp(staffSignedAtIso)
     const safeContractId = (contractId || "").trim()
 
+    drawKv("Company Name:", fields.companyName)
+    drawKv("Address:", fields.address || fields.shopAddress)
+    drawKv("VAT number:", fields.vatNumber)
+    drawKv("Mobile number:", fields.mobileNumber)
+    drawKv("Landline number:", fields.landlineNumber)
+
+    y -= 8
+    page.drawLine({
+      start: { x: MARGIN_X, y },
+      end: { x: PAGE_W - MARGIN_X, y },
+      thickness: 1,
+      color: BRAND_NAVY,
+    })
+    y -= 18
+
     drawKv("Nome rivenditore:", retailerName)
     drawKv("Email usata per OTP:", otpEmail)
     drawKv("OTP verificato:", otpVerified)
     drawKv("Data e ora (timestamp):", otpVerifiedAt)
     drawKv("ID Contratto:", safeContractId)
 
-    y -= 6
-    page.drawText(winAnsiSafe("Firma acquisita (immagine):"), { x: labelX, y, size: 11, font: fontBold, color: BRAND_NAVY })
+    y -= 8
+    page.drawText(winAnsiSafe("Firme"), { x: labelX, y, size: 12, font: fontBold, color: BRAND_NAVY })
     y -= 18
+    page.drawText(winAnsiSafe("Rivenditore"), { x: labelX, y, size: 10, font: fontBold, color: BRAND_NAVY })
+    page.drawText(winAnsiSafe("Nome del Staff"), {
+      x: PAGE_W - MARGIN_X - fontBold.widthOfTextAtSize(winAnsiSafe("Nome del Staff"), 10),
+      y,
+      size: 10,
+      font: fontBold,
+      color: BRAND_NAVY,
+    })
+    y -= 10
+
+    const boxGap = 16
+    const boxW = (PAGE_W - MARGIN_X * 2 - boxGap) / 2
+    const boxH = 104
+    const leftBoxX = MARGIN_X
+    const rightBoxX = MARGIN_X + boxW + boxGap
+    const boxY = y - boxH
+
+    page.drawRectangle({ x: leftBoxX, y: boxY, width: boxW, height: boxH, borderColor: BRAND_NAVY, borderWidth: 0.8 })
+    page.drawRectangle({ x: rightBoxX, y: boxY, width: boxW, height: boxH, borderColor: BRAND_NAVY, borderWidth: 0.8 })
+
     if (retailerSig) {
-      const maxW = 260
-      const maxH = 90
+      const maxW = boxW - 16
+      const maxH = boxH - 18
       const ratio = Math.min(maxW / retailerSig.width, maxH / retailerSig.height)
       const w = retailerSig.width * ratio
       const h = retailerSig.height * ratio
-      const boxW = maxW + 10
-      const boxH = maxH + 10
-      const boxX = labelX
-      const boxY = y - boxH
-      page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: BRAND_NAVY, borderWidth: 0.8 })
       page.drawImage(retailerSig, {
-        x: boxX + 5 + (maxW - w) / 2,
-        y: boxY + 5 + (maxH - h) / 2,
+        x: leftBoxX + (boxW - w) / 2,
+        y: boxY + (boxH - h) / 2,
         width: w,
         height: h,
         opacity: 0.95,
       })
-      y = boxY - 18
     } else {
-      page.drawText(winAnsiSafe("Non disponibile"), { x: labelX, y, size: 11, font, color: BRAND_NAVY })
-      y -= 20
+      const txt = winAnsiSafe("Non disponibile")
+      const tw = font.widthOfTextAtSize(txt, 10)
+      page.drawText(txt, { x: leftBoxX + (boxW - tw) / 2, y: boxY + boxH / 2 - 5, size: 10, font, color: BRAND_NAVY })
     }
 
-    page.drawText(winAnsiSafe("Firma Responsabile + timestamp:"), { x: labelX, y, size: 11, font: fontBold, color: BRAND_NAVY })
-    y -= 16
-    page.drawText(winAnsiSafe(staffSignedAt), { x: labelX, y, size: 10, font, color: BRAND_NAVY })
-    y -= 16
     if (staffSig) {
-      const maxW = 260
-      const maxH = 90
+      const maxW = boxW - 16
+      const maxH = boxH - 18
       const ratio = Math.min(maxW / staffSig.width, maxH / staffSig.height)
       const w = staffSig.width * ratio
       const h = staffSig.height * ratio
-      const boxW = maxW + 10
-      const boxH = maxH + 10
-      const boxX = labelX
-      const boxY = y - boxH
-      page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: BRAND_NAVY, borderWidth: 0.8 })
       page.drawImage(staffSig, {
-        x: boxX + 5 + (maxW - w) / 2,
-        y: boxY + 5 + (maxH - h) / 2,
+        x: rightBoxX + (boxW - w) / 2,
+        y: boxY + (boxH - h) / 2,
         width: w,
         height: h,
         opacity: 0.95,
       })
-      y = boxY - 22
     } else {
-      page.drawText(winAnsiSafe("Non disponibile"), { x: labelX, y, size: 11, font, color: BRAND_NAVY })
-      y -= 22
+      const txt = winAnsiSafe("Non disponibile")
+      const tw = font.widthOfTextAtSize(txt, 10)
+      page.drawText(txt, { x: rightBoxX + (boxW - tw) / 2, y: boxY + boxH / 2 - 5, size: 10, font, color: BRAND_NAVY })
     }
+
+    const nameY = boxY - 14
+    page.drawText(winAnsiSafe(retailerName), { x: leftBoxX, y: nameY, size: 10, font: font, color: BRAND_NAVY })
+    page.drawText(winAnsiSafe(staffName), { x: rightBoxX, y: nameY, size: 10, font: font, color: BRAND_NAVY })
+    y = nameY - 18
+
+    page.drawText(winAnsiSafe("Timestamp firma staff:"), { x: labelX, y, size: 10, font: fontBold, color: BRAND_NAVY })
+    y -= 14
+    page.drawText(winAnsiSafe(staffSignedAt), { x: labelX, y, size: 10, font, color: BRAND_NAVY })
+    y -= 18
 
     const paragraphMaxW = PAGE_W - MARGIN_X * 2
     const paragraphSize = 10
@@ -449,6 +480,27 @@ export async function buildContractPdf({
     drawParagraph(
       "Le Parti riconoscono che il presente Contratto è valido ed efficace ai sensi del Regolamento (UE) n. 910/2014 (eIDAS) e degli articoli 20 e 21 del Codice dell’Amministrazione Digitale, ed è giuridicamente vincolante e opponibile.",
     )
+
+    const footerH = 64
+    page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: footerH, color: BRAND_NAVY })
+    const footerLines = [
+      "Distributore Autorizzato Lycamobile",
+      "Universal Service 2006 S.R.L. · Via Genzano 195, 00179 Roma",
+      "P.IVA: IT 09037721009",
+    ]
+    const footerSize = 9
+    const footerStartY = 42
+    for (let i = 0; i < footerLines.length; i++) {
+      const t = winAnsiSafe(footerLines[i]!)
+      const tw = fontBold.widthOfTextAtSize(t, footerSize)
+      page.drawText(t, {
+        x: (PAGE_W - tw) / 2,
+        y: footerStartY - i * 14,
+        size: footerSize,
+        font: fontBold,
+        color: rgb(1, 1, 1),
+      })
+    }
   }
 
   // ---------- PAGE 1 ----------
@@ -520,7 +572,6 @@ export async function buildContractPdf({
   if (hasSignatureSummaryPage) {
     const p8 = pdf.addPage([PAGE_W, PAGE_H])
     drawSignatureSummaryPage(p8)
-    drawPageFooter(p8, 8, BRAND_NAVY)
   }
 
   return await pdf.save()
