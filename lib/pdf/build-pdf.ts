@@ -26,24 +26,6 @@ const FOOTER_Y = 30
 const BODY_SIZE = 10
 const LINE_HEIGHT = 13
 
-function wrapText(text: string, maxW: number, f: PDFFont, size: number) {
-  if (!text) return [""]
-  const words = text.split(/\s+/)
-  const lines: string[] = []
-  let cur = ""
-  for (const w of words) {
-    const test = cur ? `${cur} ${w}` : w
-    if (f.widthOfTextAtSize(test, size) > maxW && cur) {
-      lines.push(cur)
-      cur = w
-    } else {
-      cur = test
-    }
-  }
-  if (cur) lines.push(cur)
-  return lines
-}
-
 interface Block {
   text: string
   bold?: boolean
@@ -60,9 +42,9 @@ interface BuildArgs {
   lycaLogoPng?: Uint8Array | null
   /** Full name of the staff user generating/signing the contract. */
   staffSignerName?: string
-  otpProof?: { retailerName: string; email: string; verifiedAtIso: string }
   contractId?: string
   staffSignedAtIso?: string
+  otpProof?: { retailerName: string; email: string; verifiedAtIso: string }
 }
 
 export async function buildContractPdf({
@@ -72,9 +54,9 @@ export async function buildContractPdf({
   usLogoPng,
   lycaLogoPng,
   staffSignerName,
-  otpProof,
   contractId,
   staffSignedAtIso,
+  otpProof,
 }: BuildArgs): Promise<Uint8Array> {
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
@@ -111,8 +93,43 @@ export async function buildContractPdf({
       }
     : null
 
-  const isSigned = Boolean(retailerSignaturePng && staffSignaturePng && otpProof)
-  const totalPages = isSigned ? 8 : 7
+  const hasSignatureSummaryPage = Boolean(contractId && staffSignedAtIso)
+  const totalPages = hasSignatureSummaryPage ? 8 : 7
+
+  // Helper: wrap text into lines fitting a given width
+  const wrap = (text: string, maxW: number, f: PDFFont, size: number) => {
+    if (!text) return [""]
+    const words = text.split(/\s+/)
+    const lines: string[] = []
+    let cur = ""
+    for (const w of words) {
+      const test = cur ? `${cur} ${w}` : w
+      if (f.widthOfTextAtSize(test, size) > maxW && cur) {
+        lines.push(cur)
+        cur = w
+      } else {
+        cur = test
+      }
+    }
+    if (cur) lines.push(cur)
+    return lines
+  }
+
+  const formatTimestamp = (iso: string | null | undefined) => {
+    if (!iso) return ""
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return iso
+    const local = d.toLocaleString("it-IT", {
+      timeZone: "Europe/Rome",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+    return `${local} (${d.toISOString()})`
+  }
 
   interface Segment {
     text: string
@@ -231,6 +248,121 @@ export async function buildContractPdf({
     })
   }
 
+  const drawSignatureSummaryPage = (page: PDFPage) => {
+    const title = "RIEPILOGO FIRME (MOLTO IMPORTANTE)"
+    const titleSize = 14
+    const titleW = fontBold.widthOfTextAtSize(title, titleSize)
+    page.drawText(title, {
+      x: (PAGE_W - titleW) / 2,
+      y: PAGE_H - MARGIN_TOP - 10,
+      size: titleSize,
+      font: fontBold,
+      color: LYCA_BLUE,
+    })
+
+    let y = PAGE_H - MARGIN_TOP - 50
+    const labelX = MARGIN_X
+    const valueX = MARGIN_X + 170
+    const maxValueW = PAGE_W - MARGIN_X - valueX
+    const kvSize = 11
+    const kvLineH = 14
+
+    const drawKv = (label: string, value: string) => {
+      page.drawText(label, { x: labelX, y, size: kvSize, font: fontBold, color: BLACK })
+      const lines = wrap(value || "", maxValueW, font, kvSize)
+      let yy = y
+      for (const line of lines) {
+        page.drawText(line, { x: valueX, y: yy, size: kvSize, font, color: BLACK })
+        yy -= kvLineH
+      }
+      y = yy - 6
+    }
+
+    const retailerName = (otp?.retailerName || fields.contactPerson || fields.companyName || "").trim()
+    const otpEmail = (otp?.email || fields.email || "").trim()
+    const otpVerified = otp ? "Sì" : "No"
+    const otpVerifiedAt = otp ? formatTimestamp(otp.verifiedAtIso) : ""
+    const staffSignedAt = formatTimestamp(staffSignedAtIso)
+    const safeContractId = (contractId || "").trim()
+
+    drawKv("Nome rivenditore:", retailerName)
+    drawKv("Email usata per OTP:", otpEmail)
+    drawKv("OTP verificato:", otpVerified)
+    drawKv("Data e ora (timestamp):", otpVerifiedAt)
+    drawKv("ID Contratto:", safeContractId)
+
+    y -= 6
+    page.drawText("Firma acquisita (immagine):", { x: labelX, y, size: 11, font: fontBold, color: BLACK })
+    y -= 18
+    if (retailerSig) {
+      const maxW = 260
+      const maxH = 90
+      const ratio = Math.min(maxW / retailerSig.width, maxH / retailerSig.height)
+      const w = retailerSig.width * ratio
+      const h = retailerSig.height * ratio
+      const boxW = maxW + 10
+      const boxH = maxH + 10
+      const boxX = labelX
+      const boxY = y - boxH
+      page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: BLACK, borderWidth: 0.5 })
+      page.drawImage(retailerSig, {
+        x: boxX + 5 + (maxW - w) / 2,
+        y: boxY + 5 + (maxH - h) / 2,
+        width: w,
+        height: h,
+        opacity: 0.95,
+      })
+      y = boxY - 18
+    } else {
+      page.drawText("Non disponibile", { x: labelX, y, size: 11, font, color: MUTED })
+      y -= 20
+    }
+
+    page.drawText("Firma Responsabile + timestamp:", { x: labelX, y, size: 11, font: fontBold, color: BLACK })
+    y -= 16
+    page.drawText(staffSignedAt, { x: labelX, y, size: 10, font, color: MUTED })
+    y -= 16
+    if (staffSig) {
+      const maxW = 260
+      const maxH = 90
+      const ratio = Math.min(maxW / staffSig.width, maxH / staffSig.height)
+      const w = staffSig.width * ratio
+      const h = staffSig.height * ratio
+      const boxW = maxW + 10
+      const boxH = maxH + 10
+      const boxX = labelX
+      const boxY = y - boxH
+      page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: BLACK, borderWidth: 0.5 })
+      page.drawImage(staffSig, {
+        x: boxX + 5 + (maxW - w) / 2,
+        y: boxY + 5 + (maxH - h) / 2,
+        width: w,
+        height: h,
+        opacity: 0.95,
+      })
+      y = boxY - 22
+    } else {
+      page.drawText("Non disponibile", { x: labelX, y, size: 11, font, color: MUTED })
+      y -= 22
+    }
+
+    const legalBlocks: Block[] = [
+      {
+        text:
+          "Il presente Contratto è sottoscritto mediante firma elettronica attraverso la piattaforma RCM (Retailer Contract Management).",
+      },
+      {
+        text:
+          "Il Rivenditore dichiara che la firma è stata apposta personalmente, previa verifica dell’identità tramite codice OTP inviato all’indirizzo e‑mail indicato, e riconosce che la presente sottoscrizione è a lui pienamente riconducibile.",
+      },
+      {
+        text:
+          "Le Parti riconoscono che il presente Contratto è valido ed efficace ai sensi del Regolamento (UE) n. 910/2014 (eIDAS) e degli articoli 20 e 21 del Codice dell’Amministrazione Digitale, ed è giuridicamente vincolante e opponibile.",
+      },
+    ]
+    drawBlocks(page, legalBlocks, y, 8, { paragraphGap: 6 })
+  }
+
   // ---------- PAGE 1 ----------
   const p1 = pdf.addPage([PAGE_W, PAGE_H])
   if (usLogo) {
@@ -297,19 +429,9 @@ export async function buildContractPdf({
   drawFinalSignatureBlock(p7, font, fontBold, retailerSig, staffSig, sigTop, fields, staffName, otp)
   drawPageFooter(p7, 7)
 
-  if (isSigned) {
+  if (hasSignatureSummaryPage) {
     const p8 = pdf.addPage([PAGE_W, PAGE_H])
-    drawSignatureSummaryPage(
-      p8,
-      font,
-      fontBold,
-      retailerSig,
-      staffSig,
-      staffName,
-      otp,
-      contractId ?? "",
-      staffSignedAtIso ?? "",
-    )
+    drawSignatureSummaryPage(p8)
     drawPageFooter(p8, 8)
   }
 
@@ -680,13 +802,6 @@ function drawPage4RegistrationForm(
     const otpFontSize = 6
     page.drawText(`${otp.retailerName}`, { x: sigLineX, y: ry + 12, size: otpFontSize, font, color: MUTED })
     page.drawText(`OTP: ${ts} · ${otp.email}`, { x: sigLineX, y: ry + 4, size: otpFontSize, font, color: MUTED })
-    page.drawText("La sottoscrizione del presente Contratto è confermata tramite verifica OTP.", {
-      x: sigLineX,
-      y: sigLineY - 14,
-      size: 7,
-      font,
-      color: BLACK,
-    })
   }
   page.drawText("Data:", {
     x: sigLineX + sigLineLen + 20,
@@ -869,145 +984,8 @@ function drawFinalSignatureBlock(
       const otpFontSize = 6
       page.drawText(`${otp.retailerName}`, { x: col1X, y: lineY + 10, size: otpFontSize, font, color: MUTED })
       page.drawText(`OTP: ${ts} · ${otp.email}`, { x: col1X, y: lineY + 2, size: otpFontSize, font, color: MUTED })
-      page.drawText("La sottoscrizione del presente Contratto è confermata tramite verifica OTP.", {
-        x: col1X,
-        y: lineY - 25,
-        size: 7,
-        font,
-        color: BLACK,
-      })
     }
 
     y -= rowH
-  }
-}
-
-function drawSignatureSummaryPage(
-  page: PDFPage,
-  font: PDFFont,
-  fontBold: PDFFont,
-  retailerSig: PDFImage | null,
-  staffSig: PDFImage | null,
-  staffName: string,
-  otp: { retailerName: string; email: string; verifiedAtIso: string } | null,
-  contractId: string,
-  staffSignedAtIso: string,
-) {
-  const title = "RIEPILOGO FIRME (MOLTO IMPORTANTE)"
-  const titleSize = 14
-  const titleW = fontBold.widthOfTextAtSize(title, titleSize)
-  page.drawText(title, {
-    x: (PAGE_W - titleW) / 2,
-    y: PAGE_H - MARGIN_TOP - 10,
-    size: titleSize,
-    font: fontBold,
-    color: LYCA_BLUE,
-  })
-
-  const formatTs = (iso: string) => {
-    const d = new Date(iso)
-    if (Number.isNaN(d.getTime())) return ""
-    return d.toLocaleString("it-IT", {
-      timeZone: "Europe/Rome",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    })
-  }
-
-  const maxW = PAGE_W - MARGIN_X * 2
-  const labelX = MARGIN_X
-  const valueX = MARGIN_X + 190
-  const valueW = maxW - (valueX - MARGIN_X)
-  const lineH = 14
-  const labelSize = 10
-  const valueSize = 10
-
-  let y = PAGE_H - MARGIN_TOP - 55
-
-  const drawField = (label: string, value: string) => {
-    page.drawText(label, { x: labelX, y, size: labelSize, font: fontBold, color: BLACK })
-    const lines = value ? wrapText(value, valueW, font, valueSize) : [""]
-    let yy = y
-    for (const line of lines) {
-      page.drawText(line, { x: valueX, y: yy, size: valueSize, font, color: BLACK })
-      yy -= lineH
-    }
-    y = Math.min(y - lineH, yy) - 6
-  }
-
-  drawField("Nome rivenditore:", otp?.retailerName || "")
-  drawField("Email usata per OTP:", otp?.email || "")
-  drawField("OTP verificato:", otp ? "Sì" : "No")
-  drawField("Data e ora (timestamp):", otp?.verifiedAtIso ? formatTs(otp.verifiedAtIso) : "")
-  drawField("ID Contratto:", contractId)
-
-  const imgLabelSize = 10
-  const imgMaxW = 240
-  const imgMaxH = 80
-
-  page.drawText("Firma acquisita (immagine):", {
-    x: labelX,
-    y,
-    size: imgLabelSize,
-    font: fontBold,
-    color: BLACK,
-  })
-  y -= 16
-  if (retailerSig) {
-    const ratio = Math.min(imgMaxW / retailerSig.width, imgMaxH / retailerSig.height)
-    const w = retailerSig.width * ratio
-    const h = retailerSig.height * ratio
-    page.drawImage(retailerSig, { x: valueX, y: y - h + 12, width: w, height: h, opacity: 0.95 })
-    y -= imgMaxH
-  } else {
-    page.drawText("—", { x: valueX, y, size: valueSize, font, color: BLACK })
-    y -= 18
-  }
-  y -= 10
-
-  const managerTs = staffSignedAtIso ? formatTs(staffSignedAtIso) : ""
-  page.drawText("Firma del responsabile (immagine) + timestamp:", {
-    x: labelX,
-    y,
-    size: imgLabelSize,
-    font: fontBold,
-    color: BLACK,
-  })
-  y -= 16
-  page.drawText(`${staffName}${managerTs ? ` · ${managerTs}` : ""}`, {
-    x: valueX,
-    y,
-    size: valueSize,
-    font,
-    color: BLACK,
-  })
-  y -= 16
-  if (staffSig) {
-    const ratio = Math.min(imgMaxW / staffSig.width, imgMaxH / staffSig.height)
-    const w = staffSig.width * ratio
-    const h = staffSig.height * ratio
-    page.drawImage(staffSig, { x: valueX, y: y - h + 12, width: w, height: h, opacity: 0.95 })
-    y -= imgMaxH
-  } else {
-    page.drawText("—", { x: valueX, y, size: valueSize, font, color: BLACK })
-    y -= 18
-  }
-
-  y -= 8
-
-  const paragraph =
-    "Il presente Contratto è sottoscritto mediante firma elettronica attraverso la piattaforma RCM (Retailer Contract Management). " +
-    "Il Rivenditore dichiara che la firma è stata apposta personalmente, previa verifica dell’identità tramite codice OTP inviato all’indirizzo e‑mail indicato, e riconosce che la presente sottoscrizione è a lui pienamente riconducibile. " +
-    "Le Parti riconoscono che il presente Contratto è valido ed efficace ai sensi del Regolamento (UE) n. 910/2014 (eIDAS) e degli articoli 20 e 21 del Codice dell’Amministrazione Digitale, ed è giuridicamente vincolante e opponibile."
-
-  const paraLines = wrapText(paragraph, maxW, font, 10)
-  for (const line of paraLines) {
-    if (y < MARGIN_BOTTOM + 40) break
-    page.drawText(line, { x: labelX, y, size: 10, font, color: BLACK })
-    y -= LINE_HEIGHT
   }
 }

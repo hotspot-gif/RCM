@@ -173,6 +173,10 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
               description="Draw the retailer's signature in the box below."
             />
 
+            <p className="text-sm text-slate-600">
+              La sottoscrizione del presente Contratto è confermata tramite verifica OTP.
+            </p>
+
             <label className="flex items-start gap-3 rounded-lg border-2 border-brand-blue/10 bg-brand-blue/5 p-4 text-sm transition-colors hover:bg-brand-blue/10">
               <input
                 type="checkbox"

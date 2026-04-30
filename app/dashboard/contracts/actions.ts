@@ -192,6 +192,7 @@ export async function finalizeContractAction(input: {
   try {
     const staffUser = await requireUser()
     const supabase = await createClient()
+    const signedAtIso = new Date().toISOString()
 
     const { data: contractRow, error: contractErr } = await supabase
       .from("contracts")
@@ -240,7 +241,6 @@ export async function finalizeContractAction(input: {
     ])
 
     const fullName = `${contract.contact_first_name} ${contract.contact_last_name}`.trim()
-    const signedAtIso = new Date().toISOString()
     const fields: ContractFields = {
       companyName: contract.company_name,
       vatNumber: contract.vat_number,
@@ -267,13 +267,13 @@ export async function finalizeContractAction(input: {
       usLogoPng: usLogoBytes,
       lycaLogoPng: lycaLogoBytes,
       staffSignerName: staffUser.full_name,
+      contractId: input.id,
+      staffSignedAtIso: signedAtIso,
       otpProof: {
         retailerName: fullName,
         email: contract.email,
         verifiedAtIso: contract.otp_verified_at,
       },
-      contractId: input.id,
-      staffSignedAtIso: signedAtIso,
     })
 
     const pdfPath = `${input.id}/contract-${Date.now()}.pdf`
