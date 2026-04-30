@@ -15,6 +15,8 @@ import {
 const BLACK = rgb(0, 0, 0)
 const MUTED = rgb(0.4, 0.4, 0.4)
 const LYCA_BLUE = rgb(0x1a / 255, 0x56 / 255, 0xa3 / 255)
+const BRAND_NAVY = rgb(0x21 / 255, 0x26 / 255, 0x4e / 255) // #21264e
+const SUMMARY_BG = rgb(0xff / 255, 0xf7 / 255, 0xf2 / 255) // #fff7f2
 
 // ---------- Layout ----------
 const PAGE_W = 595.28 // A4 portrait
@@ -245,7 +247,7 @@ export async function buildContractPdf({
     return y
   }
 
-  const drawPageFooter = (page: PDFPage, n: number) => {
+  const drawPageFooter = (page: PDFPage, n: number, color = MUTED) => {
     const label = `${n} di ${totalPages}`
     const w = font.widthOfTextAtSize(label, 9)
     page.drawText(label, {
@@ -253,23 +255,89 @@ export async function buildContractPdf({
       y: FOOTER_Y,
       size: 9,
       font,
-      color: MUTED,
+      color,
     })
   }
 
   const drawSignatureSummaryPage = (page: PDFPage) => {
-    const title = "RIEPILOGO FIRME (MOLTO IMPORTANTE)"
-    const titleSize = 14
-    const titleW = fontBold.widthOfTextAtSize(title, titleSize)
-    page.drawText(title, {
-      x: (PAGE_W - titleW) / 2,
-      y: PAGE_H - MARGIN_TOP - 10,
-      size: titleSize,
-      font: fontBold,
-      color: LYCA_BLUE,
+    page.drawRectangle({
+      x: 0,
+      y: 0,
+      width: PAGE_W,
+      height: PAGE_H,
+      color: SUMMARY_BG,
     })
 
-    let y = PAGE_H - MARGIN_TOP - 50
+    const headerH = 72
+    const headerY = PAGE_H - headerH
+    page.drawRectangle({
+      x: 0,
+      y: headerY,
+      width: PAGE_W,
+      height: headerH,
+      color: BRAND_NAVY,
+    })
+
+    if (usLogo) {
+      const maxH = headerH - 22
+      const maxW = 170
+      const ratio = Math.min(maxW / usLogo.width, maxH / usLogo.height)
+      const w = usLogo.width * ratio
+      const h = usLogo.height * ratio
+      page.drawImage(usLogo, {
+        x: MARGIN_X,
+        y: headerY + (headerH - h) / 2,
+        width: w,
+        height: h,
+      })
+    }
+
+    const headerRightX = PAGE_W - MARGIN_X
+    const contractNo = winAnsiSafe(contractId || "")
+    const headerDate = (() => {
+      const d = new Date(staffSignedAtIso || "")
+      if (!Number.isNaN(d.getTime())) return d.toLocaleDateString("it-IT")
+      return fields.date
+    })()
+
+    const rightLine1 = winAnsiSafe(`CONTRACT NUMBER: ${contractNo}`)
+    const rightLine2 = winAnsiSafe(`DATE: ${headerDate}`)
+    const headerFontSize = 10
+    const headerLineGap = 14
+    const r1W = fontBold.widthOfTextAtSize(rightLine1, headerFontSize)
+    const r2W = fontBold.widthOfTextAtSize(rightLine2, headerFontSize)
+    page.drawText(rightLine1, {
+      x: headerRightX - r1W,
+      y: headerY + headerH - 26,
+      size: headerFontSize,
+      font: fontBold,
+      color: rgb(1, 1, 1),
+    })
+    page.drawText(rightLine2, {
+      x: headerRightX - r2W,
+      y: headerY + headerH - 26 - headerLineGap,
+      size: headerFontSize,
+      font: fontBold,
+      color: rgb(1, 1, 1),
+    })
+
+    const title = winAnsiSafe("RIEPILOGO FIRME (MOLTO IMPORTANTE)")
+    const titleSize = 13
+    page.drawText(title, {
+      x: MARGIN_X,
+      y: headerY - 26,
+      size: titleSize,
+      font: fontBold,
+      color: BRAND_NAVY,
+    })
+    page.drawLine({
+      start: { x: MARGIN_X, y: headerY - 34 },
+      end: { x: PAGE_W - MARGIN_X, y: headerY - 34 },
+      thickness: 1,
+      color: BRAND_NAVY,
+    })
+
+    let y = headerY - 58
     const labelX = MARGIN_X
     const valueX = MARGIN_X + 170
     const maxValueW = PAGE_W - MARGIN_X - valueX
@@ -277,11 +345,13 @@ export async function buildContractPdf({
     const kvLineH = 14
 
     const drawKv = (label: string, value: string) => {
-      page.drawText(label, { x: labelX, y, size: kvSize, font: fontBold, color: BLACK })
-      const lines = wrap(value || "", maxValueW, font, kvSize)
+      const safeLabel = winAnsiSafe(label)
+      const safeValue = winAnsiSafe(value || "")
+      page.drawText(safeLabel, { x: labelX, y, size: kvSize, font: fontBold, color: BRAND_NAVY })
+      const lines = wrap(safeValue, maxValueW, font, kvSize)
       let yy = y
       for (const line of lines) {
-        page.drawText(line, { x: valueX, y: yy, size: kvSize, font, color: BLACK })
+        page.drawText(winAnsiSafe(line), { x: valueX, y: yy, size: kvSize, font, color: BRAND_NAVY })
         yy -= kvLineH
       }
       y = yy - 6
@@ -301,7 +371,7 @@ export async function buildContractPdf({
     drawKv("ID Contratto:", safeContractId)
 
     y -= 6
-    page.drawText("Firma acquisita (immagine):", { x: labelX, y, size: 11, font: fontBold, color: BLACK })
+    page.drawText(winAnsiSafe("Firma acquisita (immagine):"), { x: labelX, y, size: 11, font: fontBold, color: BRAND_NAVY })
     y -= 18
     if (retailerSig) {
       const maxW = 260
@@ -313,7 +383,7 @@ export async function buildContractPdf({
       const boxH = maxH + 10
       const boxX = labelX
       const boxY = y - boxH
-      page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: BLACK, borderWidth: 0.5 })
+      page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: BRAND_NAVY, borderWidth: 0.8 })
       page.drawImage(retailerSig, {
         x: boxX + 5 + (maxW - w) / 2,
         y: boxY + 5 + (maxH - h) / 2,
@@ -323,13 +393,13 @@ export async function buildContractPdf({
       })
       y = boxY - 18
     } else {
-      page.drawText("Non disponibile", { x: labelX, y, size: 11, font, color: MUTED })
+      page.drawText(winAnsiSafe("Non disponibile"), { x: labelX, y, size: 11, font, color: BRAND_NAVY })
       y -= 20
     }
 
-    page.drawText("Firma Responsabile + timestamp:", { x: labelX, y, size: 11, font: fontBold, color: BLACK })
+    page.drawText(winAnsiSafe("Firma Responsabile + timestamp:"), { x: labelX, y, size: 11, font: fontBold, color: BRAND_NAVY })
     y -= 16
-    page.drawText(staffSignedAt, { x: labelX, y, size: 10, font, color: MUTED })
+    page.drawText(winAnsiSafe(staffSignedAt), { x: labelX, y, size: 10, font, color: BRAND_NAVY })
     y -= 16
     if (staffSig) {
       const maxW = 260
@@ -341,7 +411,7 @@ export async function buildContractPdf({
       const boxH = maxH + 10
       const boxX = labelX
       const boxY = y - boxH
-      page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: BLACK, borderWidth: 0.5 })
+      page.drawRectangle({ x: boxX, y: boxY, width: boxW, height: boxH, borderColor: BRAND_NAVY, borderWidth: 0.8 })
       page.drawImage(staffSig, {
         x: boxX + 5 + (maxW - w) / 2,
         y: boxY + 5 + (maxH - h) / 2,
@@ -351,25 +421,34 @@ export async function buildContractPdf({
       })
       y = boxY - 22
     } else {
-      page.drawText("Non disponibile", { x: labelX, y, size: 11, font, color: MUTED })
+      page.drawText(winAnsiSafe("Non disponibile"), { x: labelX, y, size: 11, font, color: BRAND_NAVY })
       y -= 22
     }
 
-    const legalBlocks: Block[] = [
-      {
-        text:
-          "Il presente Contratto è sottoscritto mediante firma elettronica attraverso la piattaforma RCM (Retailer Contract Management).",
-      },
-      {
-        text:
-          "Il Rivenditore dichiara che la firma è stata apposta personalmente, previa verifica dell’identità tramite codice OTP inviato all’indirizzo e‑mail indicato, e riconosce che la presente sottoscrizione è a lui pienamente riconducibile.",
-      },
-      {
-        text:
-          "Le Parti riconoscono che il presente Contratto è valido ed efficace ai sensi del Regolamento (UE) n. 910/2014 (eIDAS) e degli articoli 20 e 21 del Codice dell’Amministrazione Digitale, ed è giuridicamente vincolante e opponibile.",
-      },
-    ]
-    drawBlocks(page, legalBlocks, y, 8, { paragraphGap: 6 })
+    const paragraphMaxW = PAGE_W - MARGIN_X * 2
+    const paragraphSize = 10
+    const paragraphLineH = 13
+    const paragraphGap = 8
+
+    const drawParagraph = (text: string) => {
+      const safe = winAnsiSafe(text)
+      const lines = wrap(safe, paragraphMaxW, font, paragraphSize)
+      for (const line of lines) {
+        page.drawText(winAnsiSafe(line), { x: MARGIN_X, y, size: paragraphSize, font, color: BRAND_NAVY })
+        y -= paragraphLineH
+      }
+      y -= paragraphGap
+    }
+
+    drawParagraph(
+      "Il presente Contratto è sottoscritto mediante firma elettronica attraverso la piattaforma RCM (Retailer Contract Management).",
+    )
+    drawParagraph(
+      "Il Rivenditore dichiara che la firma è stata apposta personalmente, previa verifica dell’identità tramite codice OTP inviato all’indirizzo e‑mail indicato, e riconosce che la presente sottoscrizione è a lui pienamente riconducibile.",
+    )
+    drawParagraph(
+      "Le Parti riconoscono che il presente Contratto è valido ed efficace ai sensi del Regolamento (UE) n. 910/2014 (eIDAS) e degli articoli 20 e 21 del Codice dell’Amministrazione Digitale, ed è giuridicamente vincolante e opponibile.",
+    )
   }
 
   // ---------- PAGE 1 ----------
@@ -441,7 +520,7 @@ export async function buildContractPdf({
   if (hasSignatureSummaryPage) {
     const p8 = pdf.addPage([PAGE_W, PAGE_H])
     drawSignatureSummaryPage(p8)
-    drawPageFooter(p8, 8)
+    drawPageFooter(p8, 8, BRAND_NAVY)
   }
 
   return await pdf.save()
