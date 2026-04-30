@@ -357,6 +357,18 @@ export async function buildContractPdf({
       y = yy - 6
     }
 
+    const drawMergedRow = (text: string) => {
+      const safe = winAnsiSafe(text || "")
+      const w = PAGE_W - MARGIN_X * 2
+      const size = 10
+      const lines = wrap(safe, w, font, size)
+      for (const line of lines) {
+        page.drawText(winAnsiSafe(line), { x: labelX, y, size, font, color: BRAND_NAVY })
+        y -= 13
+      }
+      y -= 6
+    }
+
     const retailerName = (otp?.retailerName || fields.contactPerson || fields.companyName || "").trim()
     const otpEmail = (otp?.email || fields.email || "").trim()
     const otpVerified = otp ? "Sì" : "No"
@@ -382,18 +394,9 @@ export async function buildContractPdf({
     drawKv("Nome rivenditore:", retailerName)
     drawKv("Email usata per OTP:", otpEmail)
     drawKv("OTP verificato:", otpVerified)
-    {
-      const note = winAnsiSafe(
-        "Momento di perfezionamento del contratto: alla verifica OTP del Rivenditore",
-      )
-      const noteSize = 10
-      const noteLines = wrap(note, maxValueW, font, noteSize)
-      for (const line of noteLines) {
-        page.drawText(winAnsiSafe(line), { x: valueX, y, size: noteSize, font, color: BRAND_NAVY })
-        y -= 13
-      }
-      y -= 6
-    }
+    drawMergedRow(
+      "Momento di perfezionamento del contratto: coincidente con la verifica OTP del Rivenditore",
+    )
     drawKv("Data e ora (timestamp):", otpVerifiedAt)
     drawKv("ID Contratto:", safeContractId)
 
@@ -530,19 +533,29 @@ export async function buildContractPdf({
       "Universal Service 2006 S.R.L. · Via Genzano 195, 00179 Roma",
       "P.IVA: IT 09037721009",
     ]
-    const footerSize = 9
-    const footerStartY = 42
+    const footerSize = 7.5
+    const footerStartY = 40
     for (let i = 0; i < footerLines.length; i++) {
       const t = winAnsiSafe(footerLines[i]!)
       const tw = fontBold.widthOfTextAtSize(t, footerSize)
       page.drawText(t, {
         x: (PAGE_W - tw) / 2,
-        y: footerStartY - i * 14,
+        y: footerStartY - i * 12,
         size: footerSize,
         font: fontBold,
         color: rgb(1, 1, 1),
       })
     }
+
+    const pageLabel = `${totalPages} di ${totalPages}`
+    const pageLabelW = font.widthOfTextAtSize(pageLabel, 9)
+    page.drawText(pageLabel, {
+      x: PAGE_W - MARGIN_X - pageLabelW,
+      y: 14,
+      size: 9,
+      font,
+      color: rgb(1, 1, 1),
+    })
   }
 
   // ---------- PAGE 1 ----------
