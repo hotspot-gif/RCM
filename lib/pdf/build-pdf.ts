@@ -293,15 +293,15 @@ export async function buildContractPdf({
     }
 
     const headerRightX = PAGE_W - MARGIN_X
-    const contractNo = winAnsiSafe(contractId || "")
+    const contractNo = winAnsiSafe((contractId || "").split("-")[0] || "")
     const headerDate = (() => {
       const d = new Date(staffSignedAtIso || "")
       if (!Number.isNaN(d.getTime())) return d.toLocaleDateString("it-IT")
       return fields.date
     })()
 
-    const rightLine1 = winAnsiSafe(`CONTRACT NUMBER: ${contractNo}`)
-    const rightLine2 = winAnsiSafe(`DATE: ${headerDate}`)
+    const rightLine1 = winAnsiSafe(`ID Contratto: ${contractNo}`)
+    const rightLine2 = winAnsiSafe(`Data: ${headerDate}`)
     const headerFontSize = 10
     const headerLineGap = 14
     const r1W = fontBold.widthOfTextAtSize(rightLine1, headerFontSize)
@@ -362,13 +362,13 @@ export async function buildContractPdf({
     const otpVerified = otp ? "Sì" : "No"
     const otpVerifiedAt = otp ? formatTimestamp(otp.verifiedAtIso) : ""
     const staffSignedAt = formatTimestamp(staffSignedAtIso)
-    const safeContractId = (contractId || "").trim()
+    const safeContractId = ((contractId || "").split("-")[0] || "").trim()
 
-    drawKv("Company Name:", fields.companyName)
-    drawKv("Address:", fields.address || fields.shopAddress)
-    drawKv("VAT number:", fields.vatNumber)
-    drawKv("Mobile number:", fields.mobileNumber)
-    drawKv("Landline number:", fields.landlineNumber)
+    drawKv("Ragione sociale:", fields.companyName)
+    drawKv("Indirizzo:", fields.address || fields.shopAddress)
+    drawKv("Partita IVA:", fields.vatNumber)
+    drawKv("Numero cellulare:", fields.mobileNumber)
+    drawKv("Numero fisso:", fields.landlineNumber)
 
     y -= 8
     page.drawLine({
@@ -382,6 +382,18 @@ export async function buildContractPdf({
     drawKv("Nome rivenditore:", retailerName)
     drawKv("Email usata per OTP:", otpEmail)
     drawKv("OTP verificato:", otpVerified)
+    {
+      const note = winAnsiSafe(
+        "Momento di perfezionamento del contratto: alla verifica OTP del Rivenditore",
+      )
+      const noteSize = 10
+      const noteLines = wrap(note, maxValueW, font, noteSize)
+      for (const line of noteLines) {
+        page.drawText(winAnsiSafe(line), { x: valueX, y, size: noteSize, font, color: BRAND_NAVY })
+        y -= 13
+      }
+      y -= 6
+    }
     drawKv("Data e ora (timestamp):", otpVerifiedAt)
     drawKv("ID Contratto:", safeContractId)
 
@@ -389,8 +401,8 @@ export async function buildContractPdf({
     page.drawText(winAnsiSafe("Firme"), { x: labelX, y, size: 12, font: fontBold, color: BRAND_NAVY })
     y -= 18
     page.drawText(winAnsiSafe("Rivenditore"), { x: labelX, y, size: 10, font: fontBold, color: BRAND_NAVY })
-    page.drawText(winAnsiSafe("Nome del Staff"), {
-      x: PAGE_W - MARGIN_X - fontBold.widthOfTextAtSize(winAnsiSafe("Nome del Staff"), 10),
+    page.drawText(winAnsiSafe("Firma del Responsabile"), {
+      x: PAGE_W - MARGIN_X - fontBold.widthOfTextAtSize(winAnsiSafe("Firma del Responsabile"), 10),
       y,
       size: 10,
       font: fontBold,
@@ -405,8 +417,24 @@ export async function buildContractPdf({
     const rightBoxX = MARGIN_X + boxW + boxGap
     const boxY = y - boxH
 
-    page.drawRectangle({ x: leftBoxX, y: boxY, width: boxW, height: boxH, borderColor: BRAND_NAVY, borderWidth: 0.8 })
-    page.drawRectangle({ x: rightBoxX, y: boxY, width: boxW, height: boxH, borderColor: BRAND_NAVY, borderWidth: 0.8 })
+    page.drawRectangle({
+      x: leftBoxX,
+      y: boxY,
+      width: boxW,
+      height: boxH,
+      color: rgb(1, 1, 1),
+      borderColor: BRAND_NAVY,
+      borderWidth: 0.8,
+    })
+    page.drawRectangle({
+      x: rightBoxX,
+      y: boxY,
+      width: boxW,
+      height: boxH,
+      color: rgb(1, 1, 1),
+      borderColor: BRAND_NAVY,
+      borderWidth: 0.8,
+    })
 
     if (retailerSig) {
       const maxW = boxW - 16
@@ -446,15 +474,29 @@ export async function buildContractPdf({
       page.drawText(txt, { x: rightBoxX + (boxW - tw) / 2, y: boxY + boxH / 2 - 5, size: 10, font, color: BRAND_NAVY })
     }
 
-    const nameY = boxY - 14
+    const signedByY = boxY - 14
+    const signedByLabel = winAnsiSafe("Firmato da")
+    page.drawText(signedByLabel, { x: leftBoxX, y: signedByY, size: 9, font: fontBold, color: BRAND_NAVY })
+    page.drawText(signedByLabel, { x: rightBoxX, y: signedByY, size: 9, font: fontBold, color: BRAND_NAVY })
+
+    const nameY = signedByY - 12
     page.drawText(winAnsiSafe(retailerName), { x: leftBoxX, y: nameY, size: 10, font: font, color: BRAND_NAVY })
     page.drawText(winAnsiSafe(staffName), { x: rightBoxX, y: nameY, size: 10, font: font, color: BRAND_NAVY })
-    y = nameY - 18
 
-    page.drawText(winAnsiSafe("Timestamp firma staff:"), { x: labelX, y, size: 10, font: fontBold, color: BRAND_NAVY })
-    y -= 14
-    page.drawText(winAnsiSafe(staffSignedAt), { x: labelX, y, size: 10, font, color: BRAND_NAVY })
-    y -= 18
+    const tsSize = 8.5
+    const tsLineH = 11
+    const retailerTsY = nameY - 12
+    const staffTsY = nameY - 12
+    const retailerTsLines = wrap(winAnsiSafe(otpVerifiedAt || ""), boxW, font, tsSize)
+    const staffTsLines = wrap(winAnsiSafe(staffSignedAt || ""), boxW, font, tsSize)
+    for (let i = 0; i < Math.max(retailerTsLines.length, staffTsLines.length); i++) {
+      const l = retailerTsLines[i]
+      if (l) page.drawText(winAnsiSafe(l), { x: leftBoxX, y: retailerTsY - i * tsLineH, size: tsSize, font, color: BRAND_NAVY })
+      const r = staffTsLines[i]
+      if (r) page.drawText(winAnsiSafe(r), { x: rightBoxX, y: staffTsY - i * tsLineH, size: tsSize, font, color: BRAND_NAVY })
+    }
+
+    y = retailerTsY - Math.max(retailerTsLines.length, staffTsLines.length) * tsLineH - 10
 
     const paragraphMaxW = PAGE_W - MARGIN_X * 2
     const paragraphSize = 10
