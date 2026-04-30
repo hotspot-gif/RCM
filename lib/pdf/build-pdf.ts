@@ -96,6 +96,14 @@ export async function buildContractPdf({
   const hasSignatureSummaryPage = Boolean(contractId && staffSignedAtIso)
   const totalPages = hasSignatureSummaryPage ? 8 : 7
 
+  const winAnsiSafe = (input: string) =>
+    (input || "")
+      .replaceAll("\u2011", "-")
+      .replaceAll("\u2013", "-")
+      .replaceAll("\u2014", "-")
+      .replaceAll("\u00A0", " ")
+      .replaceAll("\u202F", " ")
+
   // Helper: wrap text into lines fitting a given width
   const wrap = (text: string, maxW: number, f: PDFFont, size: number) => {
     if (!text) return [""]
@@ -155,7 +163,7 @@ export async function buildContractPdf({
     const size = BODY_SIZE
 
     for (const b of blocks) {
-      let text = b.text
+      let text = winAnsiSafe(b.text)
       if (!text) {
         y -= LINE_HEIGHT / 2
         continue
@@ -226,8 +234,9 @@ export async function buildContractPdf({
 
         for (const seg of line) {
           const f = seg.bold ? fontBold : font
-          page.drawText(seg.text, { x, y, size, font: f, color: BLACK })
-          x += f.widthOfTextAtSize(seg.text, size)
+          const safeText = winAnsiSafe(seg.text)
+          page.drawText(safeText, { x, y, size, font: f, color: BLACK })
+          x += f.widthOfTextAtSize(safeText, size)
         }
         y -= LINE_HEIGHT
       }
