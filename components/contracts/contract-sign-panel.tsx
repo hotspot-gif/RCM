@@ -38,6 +38,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null)
   const [otpVerifiedAt, setOtpVerifiedAt] = useState<string | null>(null)
   const [remoteLink, setRemoteLink] = useState<string | null>(null)
+  const [autoRefreshActive, setAutoRefreshActive] = useState(false)
   const [signingState, setSigningState] = useState<null | {
     retailerSignaturePath: string | null
     retailerAck: boolean | null
@@ -68,7 +69,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
 
   const refreshSigningState = useCallback(async () => {
     const res = await getContractSigningStateAction(contractId)
-    if (!res.ok) return
+    if (!res.ok) return null
     setSigningState(res.data!)
     setAck(!!res.data!.retailerAck)
     setGdpr(!!res.data!.retailerGdpr)
@@ -80,11 +81,42 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     } else if (res.data!.retailerSignaturePath) {
       setStep(2)
     }
+    return res.data!
   }, [contractId])
 
   useEffect(() => {
     refreshSigningState()
   }, [refreshSigningState])
+
+  useEffect(() => {
+    const shouldPoll =
+      (!!remoteLink || !!signingState?.signLinkSentAt) &&
+      !signingState?.signLinkUsedAt &&
+      !(!!signingState?.retailerSignaturePath && !!signingState?.otpVerifiedAt)
+
+    setAutoRefreshActive(shouldPoll)
+    if (!shouldPoll) return
+
+    let cancelled = false
+    const tick = async () => {
+      if (cancelled) return
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return
+      const prevCompleted =
+        !!signingState?.retailerSignaturePath && !!signingState?.otpVerifiedAt
+      const next = await refreshSigningState()
+      const nextCompleted = !!next?.retailerSignaturePath && !!next?.otpVerifiedAt
+      if (!prevCompleted && nextCompleted) {
+        toast.success("Retailer completed signing")
+        router.refresh()
+      }
+    }
+
+    const id = window.setInterval(tick, 5000)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [remoteLink, refreshSigningState, router, signingState, step, otpVerifiedAt])
 
   function onNext() {
     const retailerData = retailerRef.current?.toDataUrl()
@@ -347,6 +379,11 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
               <div className="mt-1 text-sm text-slate-600">
                 Enter the 6-digit OTP sent to {otpSentTo ?? "the retailer email"}.
               </div>
+              {autoRefreshActive ? (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Waiting for retailer completion… auto-refreshing.
+                </div>
+              ) : null}
               <div className="mt-4 flex justify-center">
                 <InputOTP
                   maxLength={6}

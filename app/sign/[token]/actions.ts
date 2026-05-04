@@ -3,6 +3,7 @@
 import crypto from "node:crypto"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
+import { headers } from "next/headers"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { Contract } from "@/lib/types"
 
@@ -85,6 +86,17 @@ function isExpired(iso: string | null | undefined) {
   return Number.isNaN(t) || Date.now() > t
 }
 
+async function getRequestMeta() {
+  const h = await headers()
+  const forwardedFor = h.get("x-forwarded-for")
+  const ip =
+    (forwardedFor ? forwardedFor.split(",")[0]?.trim() : null) ??
+    h.get("x-real-ip") ??
+    null
+  const userAgent = h.get("user-agent") ?? null
+  return { ip, userAgent }
+}
+
 export async function saveRetailerSignatureByTokenAction(input: {
   token: string
   retailerSignature: string
@@ -111,6 +123,7 @@ export async function saveRetailerSignatureByTokenAction(input: {
     if (uploadErr) return { ok: false, error: uploadErr.message }
 
     const nowIso = new Date().toISOString()
+    const meta = await getRequestMeta()
     const { error: updErr } = await supabase
       .from("contracts")
       .update({
@@ -118,6 +131,8 @@ export async function saveRetailerSignatureByTokenAction(input: {
         retailer_ack: input.ack,
         retailer_gdpr: input.gdpr,
         retailer_signed_at: nowIso,
+        retailer_sign_ip: meta.ip,
+        retailer_sign_user_agent: meta.userAgent,
         otp_verified_at: null,
         status: "PENDING",
       })
@@ -245,6 +260,7 @@ export async function verifyContractOtpByTokenAction(input: {
     }
 
     const verifiedAt = new Date().toISOString()
+    const meta = await getRequestMeta()
     const shouldCloseLink =
       !!contract.retailer_signature_path && !!contract.retailer_ack && !!contract.retailer_gdpr
 
@@ -252,6 +268,8 @@ export async function verifyContractOtpByTokenAction(input: {
       .from("contracts")
       .update({
         otp_verified_at: verifiedAt,
+        otp_verify_ip: meta.ip,
+        otp_verify_user_agent: meta.userAgent,
         sign_link_used_at: shouldCloseLink ? verifiedAt : contract.sign_link_used_at,
       })
       .eq("id", contract.id)
@@ -262,4 +280,3 @@ export async function verifyContractOtpByTokenAction(input: {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
   }
 }
-

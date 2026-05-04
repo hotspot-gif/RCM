@@ -35,6 +35,8 @@ export interface Contract {
   retailer_ack?: boolean | null
   retailer_gdpr?: boolean | null
   retailer_signed_at?: string | null
+  retailer_sign_ip?: string | null
+  retailer_sign_user_agent?: string | null
   staff_signature_path: string | null
   pdf_path: string | null
   status: ContractStatus
@@ -46,6 +48,8 @@ export interface Contract {
   otp_expires_at?: string | null
   otp_verified_at?: string | null
   otp_attempts?: number | null
+  otp_verify_ip?: string | null
+  otp_verify_user_agent?: string | null
   sign_link_hash?: string | null
   sign_link_sent_at?: string | null
   sign_link_expires_at?: string | null
