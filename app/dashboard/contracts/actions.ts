@@ -319,6 +319,49 @@ export async function saveRetailerSignatureAction(input: {
   }
 }
 
+async function buildRetailerSigningLinkEmailHtml(input: {
+  retailerName: string
+  shopName: string
+  zone: string
+  contractCode: string
+  issueDate: string
+  signDeadline: string
+  pdfFilename: string
+  pdfSize: string
+  pdfPages: string
+  signUrl: string
+  draftDownloadUrl: string
+}) {
+  try {
+    const templatePath = path.join(process.cwd(), "public", "remotesign.html")
+    const raw = await readFile(templatePath, "utf8")
+
+    return raw
+      .replaceAll("[Nome Retailer]", escapeHtml(input.retailerName || "Retailer"))
+      .replaceAll("[Nome Negozio]", escapeHtml(input.shopName || ""))
+      .replaceAll("[Zona / Agente]", escapeHtml(input.zone || "—"))
+      .replaceAll("[CONTRACT_CODE]", escapeHtml(input.contractCode || ""))
+      .replaceAll("[ISSUE_DATE]", escapeHtml(input.issueDate || ""))
+      .replaceAll("[SIGN_DEADLINE]", escapeHtml(input.signDeadline || ""))
+      .replaceAll("[PDF_FILENAME]", escapeHtml(input.pdfFilename || ""))
+      .replaceAll("[PDF_SIZE]", escapeHtml(input.pdfSize || ""))
+      .replaceAll("[PDF_PAGES]", escapeHtml(input.pdfPages || ""))
+      .replaceAll("[SIGN_URL]", escapeHtml(input.signUrl || ""))
+      .replaceAll("[DOWNLOAD_URL]", escapeHtml(input.draftDownloadUrl || ""))
+  } catch {
+    const safeName = escapeHtml(input.retailerName || "Retailer")
+    const safeSignUrl = escapeHtml(input.signUrl || "")
+    const safeDraftUrl = escapeHtml(input.draftDownloadUrl || "")
+    return [
+      `<p>Gentile <strong>${safeName}</strong>,</p>`,
+      `<p>Per firmare il contratto, apri questo link dal tuo dispositivo:</p>`,
+      `<p><a href="${safeSignUrl}" target="_blank" rel="noreferrer">${safeSignUrl}</a></p>`,
+      `<p>Bozza contratto (PDF): <a href="${safeDraftUrl}" target="_blank" rel="noreferrer">${safeDraftUrl}</a></p>`,
+      `<p>Universal Service 2006 S.R.L</p>`,
+    ].join("")
+  }
+}
+
 export async function sendRetailerSigningLinkAction(
   id: string,
 ): Promise<
@@ -330,7 +373,7 @@ export async function sendRetailerSigningLinkAction(
   }>
 > {
   try {
-    await requireUser()
+    const user = await requireUser()
     const supabase = await createClient()
 
     const { data: contractRow, error: contractErr } = await supabase
@@ -392,14 +435,62 @@ export async function sendRetailerSigningLinkAction(
       }
     }
 
-    const safeName = escapeHtml(contract.contact_first_name || "Retailer")
-    const html = [
-      `<p>Gentile <strong>${safeName}</strong>,</p>`,
-      `<p>Per firmare il contratto, apri questo link dal tuo dispositivo:</p>`,
-      `<p><a href="${url}" target="_blank" rel="noreferrer">${url}</a></p>`,
-      `<p>Il link scade il ${expiresAt.toLocaleString("it-IT")}.</p>`,
-      `<p>Universal Service 2006 S.R.L</p>`,
-    ].join("")
+    const retailerName = `${contract.contact_first_name ?? ""} ${contract.contact_last_name ?? ""}`.trim()
+    const retailerCode = (contract.id ?? "").split("-")[0]?.toUpperCase() ?? ""
+    const contractCode = retailerCode || (contract.id ?? "")
+
+    const issueDate = now.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+    const signDeadline = expiresAt.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+
+    let draftDownloadUrl = url
+    let pdfFilename = "Contratto_Affiliazione_Retailer_Bozza.pdf"
+    let pdfSize = "—"
+    let pdfPages = "7 pagine"
+
+    try {
+      const { pdfBytes } = await buildDraftContractPdf(contract, user.full_name)
+      const safeRetailerCode = (retailerCode || "CONTRATTO").replace(/[^A-Za-z0-9_-]/g, "-")
+      pdfFilename = `Contratto_Affiliazione_BOZZA_${safeRetailerCode}.pdf`
+      pdfSize = `${Math.max(1, Math.round(pdfBytes.length / 1024))} KB`
+
+      const pdfPath = `${id}/draft-signlink-${Date.now()}.pdf`
+      const { error: upErr } = await supabase.storage
+        .from("contracts")
+        .upload(pdfPath, pdfBytes, {
+          contentType: "application/pdf",
+          upsert: true,
+        })
+      if (!upErr) {
+        const { data: urlData, error: urlErr } = await supabase.storage
+          .from("contracts")
+          .createSignedUrl(pdfPath, 60 * 60 * 24 * 7, { download: true })
+        if (!urlErr && urlData?.signedUrl) {
+          draftDownloadUrl = urlData.signedUrl
+        }
+      }
+    } catch {}
+
+    const html = await buildRetailerSigningLinkEmailHtml({
+      retailerName,
+      shopName: contract.shop_name ?? "",
+      zone: contract.zone ?? "—",
+      contractCode,
+      issueDate,
+      signDeadline,
+      pdfFilename,
+      pdfSize,
+      pdfPages,
+      signUrl: url,
+      draftDownloadUrl,
+    })
 
     const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
     const res = await fetch("https://api.resend.com/emails", {
@@ -413,7 +504,7 @@ export async function sendRetailerSigningLinkAction(
         to: [contract.email],
         subject: "Link per la firma del contratto",
         html,
-        text: `Gentile ${contract.contact_first_name},\n\nPer firmare il contratto apri questo link:\n${url}\n\nIl link scade il ${expiresAt.toLocaleString("it-IT")}.\n\nUniversal Service 2006 S.R.L`,
+        text: `Gentile ${contract.contact_first_name},\n\nPer firmare il contratto apri questo link:\n${url}\n\nBozza contratto (PDF):\n${draftDownloadUrl}\n\nIl link scade il ${expiresAt.toLocaleString("it-IT")}.\n\nUniversal Service 2006 S.R.L`,
       }),
     })
 
