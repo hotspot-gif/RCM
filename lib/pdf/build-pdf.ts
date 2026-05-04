@@ -46,7 +46,7 @@ interface BuildArgs {
   staffSignerName?: string
   contractId?: string
   staffSignedAtIso?: string
-  otpProof?: { retailerName: string; email: string; verifiedAtIso: string }
+  otpProof?: { retailerName: string; email: string; verifiedAtIso: string; verifyIp?: string | null }
 }
 
 export async function buildContractPdf({
@@ -92,6 +92,7 @@ export async function buildContractPdf({
         retailerName: otpProof.retailerName,
         email: otpProof.email,
         verifiedAtIso: otpProof.verifiedAtIso,
+        verifyIp: otpProof.verifyIp ?? null,
       }
     : null
 
@@ -139,6 +140,29 @@ export async function buildContractPdf({
       second: "2-digit",
     })
     return `${local} (${d.toISOString()})`
+  }
+
+  const maskIp = (rawIp: string | null | undefined) => {
+    const raw = (rawIp || "").trim()
+    if (!raw) return "-"
+    const first = (raw.split(",")[0] || "").trim()
+    if (!first) return "-"
+
+    if (first.includes(".")) {
+      const candidate = first.includes(":") ? first.slice(first.lastIndexOf(":") + 1) : first
+      const parts = candidate.split(".").map((p) => p.trim()).filter(Boolean)
+      if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.***`
+      return "***.***.***.***"
+    }
+
+    if (first.includes(":")) {
+      const candidate = (first.split("%")[0] || "").trim()
+      const parts = candidate.split(":").map((p) => p.trim()).filter(Boolean)
+      if (parts.length >= 2) return `${parts[0]}:${parts[1]}:****:****:****:****`
+      return "****:****:****:****"
+    }
+
+    return "-"
   }
 
   interface Segment {
@@ -375,6 +399,7 @@ export async function buildContractPdf({
     const otpVerifiedAt = otp ? formatTimestamp(otp.verifiedAtIso) : ""
     const staffSignedAt = formatTimestamp(staffSignedAtIso)
     const safeContractId = ((contractId || "").split("-")[0] || "").trim()
+    const maskedIp = maskIp(otp?.verifyIp)
 
     drawKv("Ragione sociale:", fields.companyName)
     drawKv("Indirizzo:", fields.address || fields.shopAddress)
@@ -397,7 +422,7 @@ export async function buildContractPdf({
     drawMergedRow(
       "Momento di perfezionamento del contratto: coincidente con la verifica OTP del Rivenditore",
     )
-    drawMergedRow("Indirizzo IP del dispositivo al momento della firma: Masked IP")
+    drawMergedRow(`Indirizzo IP del dispositivo al momento della firma: ${maskedIp}`)
     drawKv("Data e ora (timestamp):", otpVerifiedAt)
     drawKv("ID Contratto:", safeContractId)
 

@@ -617,6 +617,7 @@ export async function finalizeContractAction(input: {
         retailerName: fullName,
         email: contract.email,
         verifiedAtIso: contract.otp_verified_at,
+        verifyIp: contract.otp_verify_ip ?? null,
       },
     })
 
