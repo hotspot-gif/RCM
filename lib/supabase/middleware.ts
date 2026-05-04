@@ -26,7 +26,8 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
   const isAuthRoute = pathname.startsWith("/auth")
-  const isPublic = pathname === "/" || isAuthRoute
+  const isSignRoute = pathname === "/sign" || pathname.startsWith("/sign/")
+  const isPublic = pathname === "/" || isAuthRoute || isSignRoute
 
   // Allow these auth routes to render even for authenticated users so we
   // never trap the browser in a bounce loop.
