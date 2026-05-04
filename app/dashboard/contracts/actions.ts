@@ -665,6 +665,53 @@ export async function sendContractEmailAction(
   }
 }
 
+async function buildDraftContractPdf(contract: Contract, staffSignerName: string) {
+  const loadPng = async (name: string): Promise<Uint8Array | null> => {
+    try {
+      const buf = await readFile(path.join(process.cwd(), "public", name))
+      return new Uint8Array(buf)
+    } catch {
+      return null
+    }
+  }
+  const [usLogoBytes, lycaLogoBytes] = await Promise.all([
+    loadPng("uslogo.png"),
+    loadPng("lyca-logo.png"),
+  ])
+
+  const fullName = `${contract.contact_first_name} ${contract.contact_last_name}`.trim()
+  const fields: ContractFields = {
+    companyName: contract.company_name,
+    vatNumber: contract.vat_number,
+    address: `${contract.street}, ${contract.house_number}, ${contract.post_code} ${contract.city}`,
+    mobileNumber: contract.mobile_number,
+    landlineNumber: contract.landline_number ?? "",
+    contactPerson: fullName,
+    surname: contract.contact_last_name,
+    firstName: contract.contact_first_name,
+    shopName: contract.shop_name,
+    shopAddress: `${contract.street} ${contract.house_number}, ${contract.post_code} ${contract.city}`,
+    street: contract.street,
+    houseNumber: contract.house_number,
+    city: contract.city,
+    postCode: contract.post_code,
+    email: contract.email,
+    date: new Date().toLocaleDateString("it-IT"),
+  }
+
+  const pdfBytes = await buildContractPdf({
+    fields,
+    retailerSignaturePng: null,
+    staffSignaturePng: null,
+    usLogoPng: usLogoBytes,
+    lycaLogoPng: lycaLogoBytes,
+    staffSignerName,
+  })
+
+  const filename = `${contract.shop_name} (Unsigned).pdf`
+  return { pdfBytes, filename }
+}
+
 /**
  * Generate a draft PDF (no signatures) and return it as a base64 string
  * for client-side download.
@@ -686,53 +733,156 @@ export async function getDraftContractPdfAction(
       return { ok: false, error: contractErr?.message || "Contract not found" }
     }
     const contract = contractRow as Contract
-
-    const loadPng = async (name: string): Promise<Uint8Array | null> => {
-      try {
-        const buf = await readFile(path.join(process.cwd(), "public", name))
-        return new Uint8Array(buf)
-      } catch {
-        return null
-      }
-    }
-    const [usLogoBytes, lycaLogoBytes] = await Promise.all([
-      loadPng("uslogo.png"),
-      loadPng("lyca-logo.png"),
-    ])
-
-    const fullName = `${contract.contact_first_name} ${contract.contact_last_name}`.trim()
-    const fields: ContractFields = {
-      companyName: contract.company_name,
-      vatNumber: contract.vat_number,
-      address: `${contract.street}, ${contract.house_number}, ${contract.post_code} ${contract.city}`,
-      mobileNumber: contract.mobile_number,
-      landlineNumber: contract.landline_number ?? "",
-      contactPerson: fullName,
-      surname: contract.contact_last_name,
-      firstName: contract.contact_first_name,
-      shopName: contract.shop_name,
-      shopAddress: `${contract.street} ${contract.house_number}, ${contract.post_code} ${contract.city}`,
-      street: contract.street,
-      houseNumber: contract.house_number,
-      city: contract.city,
-      postCode: contract.post_code,
-      email: contract.email,
-      date: new Date().toLocaleDateString("it-IT"),
-    }
-
-    const pdfBytes = await buildContractPdf({
-      fields,
-      retailerSignaturePng: null,
-      staffSignaturePng: null,
-      usLogoPng: usLogoBytes,
-      lycaLogoPng: lycaLogoBytes,
-      staffSignerName: user.full_name,
-    })
-
+    const { pdfBytes, filename } = await buildDraftContractPdf(
+      contract,
+      user.full_name,
+    )
     const base64 = Buffer.from(pdfBytes).toString("base64")
-    const filename = `${contract.shop_name} (Unsigned).pdf`
 
     return { ok: true, data: { base64, filename } }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
+export async function getDraftContractPdfUrlAction(
+  id: string,
+): Promise<ActionResult<{ url: string }>> {
+  try {
+    const user = await requireUser()
+    const supabase = await createClient()
+
+    const { data: contractRow, error: contractErr } = await supabase
+      .from("contracts")
+      .select("*")
+      .eq("id", id)
+      .single()
+    if (contractErr || !contractRow) {
+      return { ok: false, error: contractErr?.message || "Contract not found" }
+    }
+    const contract = contractRow as Contract
+
+    const { pdfBytes } = await buildDraftContractPdf(contract, user.full_name)
+    const pdfPath = `${id}/draft-${Date.now()}.pdf`
+    const { error: upErr } = await supabase.storage
+      .from("contracts")
+      .upload(pdfPath, pdfBytes, {
+        contentType: "application/pdf",
+        upsert: true,
+      })
+    if (upErr) return { ok: false, error: upErr.message }
+
+    const { data, error: urlErr } = await supabase.storage
+      .from("contracts")
+      .createSignedUrl(pdfPath, 60 * 60, { download: true })
+    if (urlErr || !data) {
+      return { ok: false, error: urlErr?.message || "Could not create URL" }
+    }
+
+    return { ok: true, data: { url: data.signedUrl } }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
+export async function sendDraftContractEmailAction(
+  id: string,
+): Promise<ActionResult<{ sentTo: string[] }>> {
+  try {
+    const user = await requireUser()
+    const supabase = await createClient()
+
+    const { data: contractRow, error: contractErr } = await supabase
+      .from("contracts")
+      .select("*")
+      .eq("id", id)
+      .single()
+    if (contractErr || !contractRow) {
+      return { ok: false, error: contractErr?.message || "Contract not found" }
+    }
+    const contract = contractRow as Contract
+
+    const resendKey = process.env.RESEND_API_KEY
+    if (!resendKey) {
+      return {
+        ok: false,
+        error:
+          "Email is not configured. Set RESEND_API_KEY in your environment to enable sending.",
+      }
+    }
+
+    const escapeHtml = (input: string) =>
+      input
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;")
+
+    const retailerName = `${contract.contact_first_name ?? ""} ${contract.contact_last_name ?? ""}`.trim()
+    const retailerCode = (contract.id ?? "").split("-")[0]?.toUpperCase() ?? ""
+    const signDate = new Date().toLocaleDateString("it-IT")
+
+    let html: string | undefined
+    try {
+      const templatePath = path.join(
+        process.cwd(),
+        "public",
+        "Contratto di Affiliazione.html",
+      )
+      const raw = await readFile(templatePath, "utf8")
+      html = raw
+        .replaceAll("{{{RETAILER_NAME}}}", escapeHtml(retailerName || ""))
+        .replaceAll("{{{COMPANY_NAME}}}", escapeHtml(contract.company_name || ""))
+        .replaceAll("{{{RETAILER_CODE}}}", escapeHtml(retailerCode || ""))
+        .replaceAll("{{{SIGN_DATE}}}", escapeHtml(signDate || ""))
+        .replaceAll(
+          "{{{CONTRACT_TYPE}}}",
+          escapeHtml("Contratto di Affiliazione (Bozza)"),
+        )
+        .replaceAll("{{{VAT_NUMBER}}}", escapeHtml(contract.vat_number || ""))
+    } catch {
+      html = undefined
+    }
+
+    const { pdfBytes } = await buildDraftContractPdf(contract, user.full_name)
+    const base64 = Buffer.from(pdfBytes).toString("base64")
+
+    const recipients = [contract.email, user.email].filter(Boolean)
+    const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
+    const safeRetailerCode = (retailerCode || "CONTRATTO").replace(
+      /[^A-Za-z0-9_-]/g,
+      "-",
+    )
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: recipients,
+        subject: `Bozza contratto — ${contract.company_name}`,
+        ...(html ? { html } : {}),
+        text: `Gentile ${contract.contact_first_name},\n\nin allegato trovate la bozza del contratto relativo al punto vendita "${contract.shop_name}".\n\nGrazie,\nUniversal Service 2006 S.R.L`,
+        attachments: [
+          {
+            filename: `Contratto_Affiliazione_BOZZA_${safeRetailerCode}.pdf`,
+            content: base64,
+          },
+        ],
+      }),
+    })
+
+    if (!res.ok) {
+      const body = await res.text()
+      return { ok: false, error: `Email failed: ${body}` }
+    }
+
+    revalidatePath(`/dashboard/contracts/${id}`)
+    return { ok: true, data: { sentTo: recipients } }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
   }

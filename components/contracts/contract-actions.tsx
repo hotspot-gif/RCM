@@ -1,14 +1,22 @@
 "use client"
 
 import { useTransition } from "react"
-import { Download, Mail, FileText } from "lucide-react"
+import { Download, Link, Mail, MessageCircle, Share2, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   getContractPdfUrlAction,
   sendContractEmailAction,
   getDraftContractPdfAction,
+  getDraftContractPdfUrlAction,
+  sendDraftContractEmailAction,
 } from "@/app/dashboard/contracts/actions"
 
 function isIosSafari() {
@@ -36,6 +44,7 @@ export function ContractActions({
   const [pendingDownload, startDownload] = useTransition()
   const [pendingEmail, startEmail] = useTransition()
   const [pendingDraft, startDraft] = useTransition()
+  const [pendingDraftShare, startDraftShare] = useTransition()
 
   const disabled = status !== "SIGNED"
 
@@ -67,6 +76,48 @@ export function ContractActions({
 
       setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000)
       toast.success("Draft PDF generated")
+    })
+  }
+
+  function shareDraftEmail() {
+    startDraftShare(async () => {
+      const res = await sendDraftContractEmailAction(contractId)
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+      toast.success(`Email sent to ${res.data!.sentTo.join(", ")}`)
+    })
+  }
+
+  function copyDraftUrl() {
+    startDraftShare(async () => {
+      const res = await getDraftContractPdfUrlAction(contractId)
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+
+      try {
+        await navigator.clipboard.writeText(res.data!.url)
+        toast.success("Draft PDF link copied")
+      } catch {
+        toast.error("Could not copy to clipboard")
+      }
+    })
+  }
+
+  function shareDraftWhatsApp() {
+    startDraftShare(async () => {
+      const res = await getDraftContractPdfUrlAction(contractId)
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+
+      const text = `Draft contract PDF:\n${res.data!.url}`
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
+      window.open(waUrl, "_blank", "noopener,noreferrer")
     })
   }
 
@@ -109,19 +160,54 @@ export function ContractActions({
   return (
     <div className="flex flex-wrap items-center gap-3">
       {status !== "SIGNED" && (
-        <Button
-          onClick={downloadDraft}
-          variant="outline"
-          disabled={pendingDraft}
-          className="border-brand-navy text-brand-navy hover:bg-brand-navy/5"
-        >
-          {pendingDraft ? (
-            <Spinner className="mr-2 h-4 w-4" />
-          ) : (
-            <FileText className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          )}
-          Download Draft (Unsigned)
-        </Button>
+        <>
+          <Button
+            onClick={downloadDraft}
+            variant="outline"
+            disabled={pendingDraft}
+            className="border-brand-navy text-brand-navy hover:bg-brand-navy/5"
+          >
+            {pendingDraft ? (
+              <Spinner className="mr-2 h-4 w-4" />
+            ) : (
+              <FileText className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            )}
+            Download Draft (Unsigned)
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={pendingDraftShare}
+                className="border-brand-navy text-brand-navy hover:bg-brand-navy/5"
+              >
+                {pendingDraftShare ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : (
+                  <Share2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                )}
+                Share Draft
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem disabled={pendingDraftShare} onClick={shareDraftEmail}>
+                <Mail className="h-4 w-4" />
+                Email
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={pendingDraftShare}
+                onClick={shareDraftWhatsApp}
+              >
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={pendingDraftShare} onClick={copyDraftUrl}>
+                <Link className="h-4 w-4" />
+                Copy URL
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
       )}
       <Button onClick={download} disabled={disabled || pendingDownload}>
         {pendingDownload ? (
