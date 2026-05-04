@@ -1,5 +1,4 @@
-"use server"
-
+import "server-only"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { SUPABASE_URL } from "./env"
 
@@ -13,4 +12,3 @@ export function createAdminClient() {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 }
-
