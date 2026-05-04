@@ -1148,7 +1148,7 @@ export async function sendDraftContractEmailAction(
       .replaceAll("{{{ZONE}}}", escapeHtml(contract.zone ?? "—"))
       .replaceAll("{{{PDF_FILENAME}}}", escapeHtml(pdfFilename))
       .replaceAll("{{{PDF_SIZE}}}", escapeHtml(`${pdfSizeKb} KB`))
-      .replaceAll("{{{PDF_PAGES}}}", escapeHtml("—"))
+      .replaceAll("{{{PDF_PAGES}}}", escapeHtml("7"))
       .replaceAll("{{{DOWNLOAD_URL}}}", escapeHtml(urlData.signedUrl))
 
     const res = await fetch("https://api.resend.com/emails", {
