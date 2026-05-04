@@ -110,12 +110,25 @@ export async function updateContractAction(
         email: input.email,
         branch: nextBranch ?? null,
         zone: nextZone ?? null,
+        status: "GENERATED",
+        retailer_signature_path: null,
+        retailer_ack: null,
+        retailer_gdpr: null,
+        retailer_signed_at: null,
+        staff_signature_path: null,
+        pdf_path: null,
+        signed_at: null,
+        emailed_at: null,
         otp_hash: null,
         otp_salt: null,
         otp_sent_at: null,
         otp_expires_at: null,
         otp_verified_at: null,
         otp_attempts: 0,
+        sign_link_hash: null,
+        sign_link_sent_at: null,
+        sign_link_expires_at: null,
+        sign_link_used_at: null,
       })
       .eq("id", input.id)
 
@@ -180,14 +193,246 @@ async function downloadFromStorage(
   return new Uint8Array(await data.arrayBuffer())
 }
 
+function sha256Hex(input: string) {
+  return crypto.createHash("sha256").update(input).digest("hex")
+}
+
+function getBaseUrl() {
+  const raw =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+    "http://localhost:3000"
+  return raw.replace(/\/+$/, "")
+}
+
+export async function getContractSigningStateAction(id: string): Promise<
+  ActionResult<{
+    retailerSignaturePath: string | null
+    retailerAck: boolean | null
+    retailerGdpr: boolean | null
+    retailerSignedAt: string | null
+    otpVerifiedAt: string | null
+    signLinkSentAt: string | null
+    signLinkExpiresAt: string | null
+    signLinkUsedAt: string | null
+    email: string | null
+  }>
+> {
+  try {
+    await requireUser()
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("contracts")
+      .select(
+        "retailer_signature_path, retailer_ack, retailer_gdpr, retailer_signed_at, otp_verified_at, sign_link_sent_at, sign_link_expires_at, sign_link_used_at, email",
+      )
+      .eq("id", id)
+      .single()
+
+    if (error || !data) return { ok: false, error: error?.message || "Contract not found" }
+    const row = data as Pick<
+      Contract,
+      | "retailer_signature_path"
+      | "retailer_ack"
+      | "retailer_gdpr"
+      | "retailer_signed_at"
+      | "otp_verified_at"
+      | "sign_link_sent_at"
+      | "sign_link_expires_at"
+      | "sign_link_used_at"
+      | "email"
+    >
+    return {
+      ok: true,
+      data: {
+        retailerSignaturePath: row.retailer_signature_path ?? null,
+        retailerAck: row.retailer_ack ?? null,
+        retailerGdpr: row.retailer_gdpr ?? null,
+        retailerSignedAt: row.retailer_signed_at ?? null,
+        otpVerifiedAt: row.otp_verified_at ?? null,
+        signLinkSentAt: row.sign_link_sent_at ?? null,
+        signLinkExpiresAt: row.sign_link_expires_at ?? null,
+        signLinkUsedAt: row.sign_link_used_at ?? null,
+        email: row.email ?? null,
+      },
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
+export async function saveRetailerSignatureAction(input: {
+  id: string
+  retailerSignature: string
+  ack: boolean
+  gdpr: boolean
+}): Promise<ActionResult<{ retailerSignaturePath: string }>> {
+  try {
+    await requireUser()
+    const supabase = await createClient()
+    const nowIso = new Date().toISOString()
+
+    const { data: existingRow, error: existingErr } = await supabase
+      .from("contracts")
+      .select("id, status")
+      .eq("id", input.id)
+      .single()
+    if (existingErr || !existingRow) {
+      return { ok: false, error: existingErr?.message || "Contract not found" }
+    }
+    const existing = existingRow as Pick<Contract, "id" | "status">
+    if (existing.status === "SIGNED") {
+      return { ok: false, error: "This contract is already signed." }
+    }
+
+    const retailerSignaturePath = await uploadSignature(
+      input.id,
+      "retailer",
+      input.retailerSignature,
+    )
+
+    const { error: updErr } = await supabase
+      .from("contracts")
+      .update({
+        retailer_signature_path: retailerSignaturePath,
+        retailer_ack: input.ack,
+        retailer_gdpr: input.gdpr,
+        retailer_signed_at: nowIso,
+        otp_verified_at: null,
+        status: "PENDING",
+      })
+      .eq("id", input.id)
+    if (updErr) return { ok: false, error: updErr.message }
+
+    revalidatePath("/dashboard")
+    revalidatePath("/dashboard/contracts")
+    revalidatePath(`/dashboard/contracts/${input.id}`)
+
+    return { ok: true, data: { retailerSignaturePath } }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
+export async function sendRetailerSigningLinkAction(
+  id: string,
+): Promise<
+  ActionResult<{
+    url: string
+    emailed: boolean
+    sentTo: string | null
+    expiresAt: string
+  }>
+> {
+  try {
+    await requireUser()
+    const supabase = await createClient()
+
+    const { data: contractRow, error: contractErr } = await supabase
+      .from("contracts")
+      .select("*")
+      .eq("id", id)
+      .single()
+    if (contractErr || !contractRow) {
+      return { ok: false, error: contractErr?.message || "Contract not found" }
+    }
+    const contract = contractRow as Contract
+    if (contract.status === "SIGNED") {
+      return { ok: false, error: "This contract is already signed." }
+    }
+    if (!contract.email) {
+      return { ok: false, error: "Retailer email is missing." }
+    }
+    if (contract.retailer_signature_path && contract.otp_verified_at) {
+      return { ok: false, error: "Retailer signing is already completed." }
+    }
+
+    const token = crypto.randomBytes(32).toString("hex")
+    const tokenHash = sha256Hex(token)
+    const now = new Date()
+    const expiresAt = new Date(now.getTime() + 72 * 60 * 60 * 1000)
+    const url = `${getBaseUrl()}/sign/${token}`
+
+    const { error: updErr } = await supabase
+      .from("contracts")
+      .update({
+        sign_link_hash: tokenHash,
+        sign_link_sent_at: now.toISOString(),
+        sign_link_expires_at: expiresAt.toISOString(),
+        sign_link_used_at: null,
+        retailer_signature_path: null,
+        retailer_ack: null,
+        retailer_gdpr: null,
+        retailer_signed_at: null,
+        otp_hash: null,
+        otp_salt: null,
+        otp_sent_at: null,
+        otp_expires_at: null,
+        otp_verified_at: null,
+        otp_attempts: 0,
+        status: "PENDING",
+      })
+      .eq("id", id)
+    if (updErr) return { ok: false, error: updErr.message }
+
+    const resendKey = process.env.RESEND_API_KEY
+    if (!resendKey) {
+      return {
+        ok: true,
+        data: { url, emailed: false, sentTo: null, expiresAt: expiresAt.toISOString() },
+      }
+    }
+
+    const safeName = escapeHtml(contract.contact_first_name || "Retailer")
+    const html = [
+      `<p>Gentile <strong>${safeName}</strong>,</p>`,
+      `<p>Per firmare il contratto, apri questo link dal tuo dispositivo:</p>`,
+      `<p><a href="${url}" target="_blank" rel="noreferrer">${url}</a></p>`,
+      `<p>Il link scade il ${expiresAt.toLocaleString("it-IT")}.</p>`,
+      `<p>Universal Service 2006 S.R.L</p>`,
+    ].join("")
+
+    const from = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [contract.email],
+        subject: "Link per la firma del contratto",
+        html,
+        text: `Gentile ${contract.contact_first_name},\n\nPer firmare il contratto apri questo link:\n${url}\n\nIl link scade il ${expiresAt.toLocaleString("it-IT")}.\n\nUniversal Service 2006 S.R.L`,
+      }),
+    })
+
+    if (!res.ok) {
+      return {
+        ok: true,
+        data: { url, emailed: false, sentTo: null, expiresAt: expiresAt.toISOString() },
+      }
+    }
+
+    return {
+      ok: true,
+      data: { url, emailed: true, sentTo: contract.email, expiresAt: expiresAt.toISOString() },
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
 /**
  * Persist retailer + staff signatures, render the final PDF and upload it.
  * Marks the contract as SIGNED.
  */
 export async function finalizeContractAction(input: {
   id: string
-  retailerSignature: string // dataURL
   staffSignature: string // dataURL
+  retailerSignature?: string | null // dataURL
 }): Promise<ActionResult<{ pdfPath: string }>> {
   try {
     const staffUser = await requireUser()
@@ -207,13 +452,14 @@ export async function finalizeContractAction(input: {
     if (!contract.otp_verified_at) {
       return { ok: false, error: "OTP verification is required before finalizing." }
     }
+    if (!input.retailerSignature && !contract.retailer_signature_path) {
+      return { ok: false, error: "Retailer signature is required before finalizing." }
+    }
 
     // 1. Upload signatures
-    const retailerPath = await uploadSignature(
-      input.id,
-      "retailer",
-      input.retailerSignature,
-    )
+    const retailerPath = input.retailerSignature
+      ? await uploadSignature(input.id, "retailer", input.retailerSignature)
+      : (contract.retailer_signature_path as string)
     const staffPath = await uploadSignature(
       input.id,
       "staff",
@@ -221,10 +467,9 @@ export async function finalizeContractAction(input: {
     )
 
     // 2. Build PDF
-    const retailerPng = Buffer.from(
-      input.retailerSignature.split(",")[1] ?? "",
-      "base64",
-    )
+    const retailerPng = input.retailerSignature
+      ? Buffer.from(input.retailerSignature.split(",")[1] ?? "", "base64")
+      : Buffer.from(await downloadFromStorage("signatures", retailerPath))
     const staffPng = Buffer.from(input.staffSignature.split(",")[1] ?? "", "base64")
 
     const loadPng = async (name: string): Promise<Uint8Array | null> => {

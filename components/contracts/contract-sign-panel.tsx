@@ -1,10 +1,10 @@
 "use client"
 
-import { useRef, useState, useTransition, useEffect } from "react"
+import { useRef, useState, useTransition, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react"
+import { ArrowRight, ArrowLeft, CheckCircle2, Copy, Link2, ExternalLink } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -12,12 +12,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { SignaturePad, type SignaturePadHandle } from "./signature-pad"
 import {
   finalizeContractAction,
+  getContractSigningStateAction,
   requestContractOtpAction,
+  saveRetailerSignatureAction,
+  sendRetailerSigningLinkAction,
   verifyContractOtpAction,
 } from "@/app/dashboard/contracts/actions"
 
@@ -33,6 +37,18 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
   const [otp, setOtp] = useState("")
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null)
   const [otpVerifiedAt, setOtpVerifiedAt] = useState<string | null>(null)
+  const [remoteLink, setRemoteLink] = useState<string | null>(null)
+  const [signingState, setSigningState] = useState<null | {
+    retailerSignaturePath: string | null
+    retailerAck: boolean | null
+    retailerGdpr: boolean | null
+    retailerSignedAt: string | null
+    otpVerifiedAt: string | null
+    signLinkSentAt: string | null
+    signLinkExpiresAt: string | null
+    signLinkUsedAt: string | null
+    email: string | null
+  }>(null)
 
   useEffect(() => {
     if (step === 3) {
@@ -50,6 +66,26 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     }
   }, [step])
 
+  const refreshSigningState = useCallback(async () => {
+    const res = await getContractSigningStateAction(contractId)
+    if (!res.ok) return
+    setSigningState(res.data!)
+    setAck(!!res.data!.retailerAck)
+    setGdpr(!!res.data!.retailerGdpr)
+    setOtpVerifiedAt(res.data!.otpVerifiedAt)
+    setOtpSentTo(res.data!.email)
+
+    if (res.data!.retailerSignaturePath && res.data!.otpVerifiedAt) {
+      setStep(3)
+    } else if (res.data!.retailerSignaturePath) {
+      setStep(2)
+    }
+  }, [contractId])
+
+  useEffect(() => {
+    refreshSigningState()
+  }, [refreshSigningState])
+
   function onNext() {
     const retailerData = retailerRef.current?.toDataUrl()
     if (!retailerData) {
@@ -65,6 +101,16 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       return
     }
     startTransition(async () => {
+      const saved = await saveRetailerSignatureAction({
+        id: contractId,
+        retailerSignature: retailerData,
+        ack,
+        gdpr,
+      })
+      if (!saved.ok) {
+        toast.error(saved.error)
+        return
+      }
       const res = await requestContractOtpAction(contractId)
       if (!res.ok) {
         toast.error(res.error)
@@ -89,6 +135,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       setOtpVerifiedAt(res.data!.verifiedAt)
       setStep(3)
       toast.success("OTP verified")
+      await refreshSigningState()
     })
   }
 
@@ -106,13 +153,31 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     })
   }
 
+  function onSendRemoteLink() {
+    startTransition(async () => {
+      const res = await sendRetailerSigningLinkAction(contractId)
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+      setRemoteLink(res.data!.url)
+      await refreshSigningState()
+      if (res.data!.emailed && res.data!.sentTo) {
+        toast.success(`Signing link sent to ${res.data!.sentTo}`)
+      } else {
+        toast.success("Signing link generated. Copy and share it with the retailer.")
+      }
+    })
+  }
+
   function onSubmit() {
     // Try to get current data, fallback to captured state
     const currentRetailerData = retailerRef.current?.toDataUrl()
     const retailerData = currentRetailerData || retailerSig
     const staffData = staffRef.current?.toDataUrl()
     
-    if (!retailerData || !ack || !gdpr) {
+    const hasRetailerSig = !!retailerData || !!signingState?.retailerSignaturePath
+    if (!hasRetailerSig || !ack || !gdpr) {
       setStep(1)
       toast.error("Retailer signature, acceptance and GDPR consent are required")
       return
@@ -131,7 +196,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     startTransition(async () => {
       const res = await finalizeContractAction({
         id: contractId,
-        retailerSignature: retailerData,
+        retailerSignature: signingState?.retailerSignaturePath ? null : (retailerData ?? null),
         staffSignature: staffData,
       })
       if (!res.ok) {
@@ -167,6 +232,60 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       <CardContent className="pt-6">
         <div className="flex flex-col gap-6">
           <div className={step === 1 ? "flex flex-col gap-6" : "hidden"}>
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-brand-navy">Remote signing link</div>
+                  <div className="mt-1 text-sm text-slate-600">
+                    Send a link to the retailer to sign and complete OTP from their own device.
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onSendRemoteLink}
+                  disabled={pending}
+                  className="w-full sm:w-auto"
+                >
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Send link
+                </Button>
+              </div>
+
+              {remoteLink ? (
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Input readOnly value={remoteLink} />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(remoteLink)
+                          toast.success("Link copied")
+                        } catch {
+                          toast.error("Could not copy link")
+                        }
+                      }}
+                      className="w-full sm:w-auto"
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => window.open(remoteLink, "_blank", "noreferrer")}
+                      className="w-full sm:w-auto"
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Open
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
             <SignaturePad
               ref={retailerRef}
               label="Retailer signature"

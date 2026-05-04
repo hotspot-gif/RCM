@@ -32,6 +32,9 @@ export interface Contract {
   zone: string | null
   created_by: string | null
   retailer_signature_path: string | null
+  retailer_ack?: boolean | null
+  retailer_gdpr?: boolean | null
+  retailer_signed_at?: string | null
   staff_signature_path: string | null
   pdf_path: string | null
   status: ContractStatus
@@ -43,6 +46,10 @@ export interface Contract {
   otp_expires_at?: string | null
   otp_verified_at?: string | null
   otp_attempts?: number | null
+  sign_link_hash?: string | null
+  sign_link_sent_at?: string | null
+  sign_link_expires_at?: string | null
+  sign_link_used_at?: string | null
   created_at: string
   updated_at: string
 }

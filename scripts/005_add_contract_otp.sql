@@ -4,5 +4,11 @@ alter table public.contracts
   add column if not exists otp_sent_at timestamptz,
   add column if not exists otp_expires_at timestamptz,
   add column if not exists otp_verified_at timestamptz,
-  add column if not exists otp_attempts integer not null default 0;
-
+  add column if not exists otp_attempts integer not null default 0,
+  add column if not exists retailer_ack boolean,
+  add column if not exists retailer_gdpr boolean,
+  add column if not exists retailer_signed_at timestamptz,
+  add column if not exists sign_link_hash text,
+  add column if not exists sign_link_sent_at timestamptz,
+  add column if not exists sign_link_expires_at timestamptz,
+  add column if not exists sign_link_used_at timestamptz;

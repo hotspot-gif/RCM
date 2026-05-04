@@ -1,0 +1,100 @@
+import crypto from "node:crypto"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { createAdminClient } from "@/lib/supabase/admin"
+import type { Contract } from "@/lib/types"
+import { RetailerSignPanel } from "./retailer-sign-panel"
+
+function sha256Hex(input: string) {
+  return crypto.createHash("sha256").update(input).digest("hex")
+}
+
+export default async function RetailerSignPage({
+  params,
+}: {
+  params: Promise<{ token: string }>
+}) {
+  const { token } = await params
+
+  try {
+    const supabase = createAdminClient()
+    const tokenHash = sha256Hex(token)
+    const { data, error } = await supabase
+      .from("contracts")
+      .select(
+        "id, company_name, contact_first_name, contact_last_name, status, retailer_signature_path, retailer_ack, retailer_gdpr, otp_verified_at, sign_link_expires_at, sign_link_used_at",
+      )
+      .eq("sign_link_hash", tokenHash)
+      .maybeSingle()
+
+    if (error || !data) {
+      return (
+        <div className="mx-auto w-full max-w-2xl p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Link non valido</CardTitle>
+            </CardHeader>
+            <CardContent>
+              Questo link non è valido oppure è stato revocato.
+            </CardContent>
+          </Card>
+        </div>
+      )
+    }
+
+    const contract = data as Pick<
+      Contract,
+      | "id"
+      | "company_name"
+      | "contact_first_name"
+      | "contact_last_name"
+      | "status"
+      | "retailer_signature_path"
+      | "retailer_ack"
+      | "retailer_gdpr"
+      | "otp_verified_at"
+      | "sign_link_expires_at"
+      | "sign_link_used_at"
+    >
+
+    return (
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 p-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Firma contratto</h1>
+          <p className="text-sm text-muted-foreground">
+            {contract.company_name}
+          </p>
+        </div>
+
+        <RetailerSignPanel
+          token={token}
+          initial={{
+            companyName: contract.company_name,
+            contactFirstName: contract.contact_first_name,
+            contactLastName: contract.contact_last_name,
+            status: contract.status,
+            retailerSignaturePath: contract.retailer_signature_path,
+            retailerAck: contract.retailer_ack ?? null,
+            retailerGdpr: contract.retailer_gdpr ?? null,
+            otpVerifiedAt: contract.otp_verified_at,
+            signLinkExpiresAt: contract.sign_link_expires_at,
+            signLinkUsedAt: contract.sign_link_used_at,
+          }}
+        />
+      </div>
+    )
+  } catch (e) {
+    return (
+      <div className="mx-auto w-full max-w-2xl p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Servizio non disponibile</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {e instanceof Error ? e.message : "Errore inatteso"}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+}
+
