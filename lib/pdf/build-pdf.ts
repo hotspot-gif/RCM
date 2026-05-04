@@ -397,6 +397,7 @@ export async function buildContractPdf({
     drawMergedRow(
       "Momento di perfezionamento del contratto: coincidente con la verifica OTP del Rivenditore",
     )
+    drawMergedRow("Indirizzo IP del dispositivo al momento della firma: Masked IP")
     drawKv("Data e ora (timestamp):", otpVerifiedAt)
     drawKv("ID Contratto:", safeContractId)
 
