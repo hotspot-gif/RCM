@@ -712,6 +712,279 @@ async function buildDraftContractPdf(contract: Contract, staffSignerName: string
   return { pdfBytes, filename }
 }
 
+const DRAFT_CONTRACT_EMAIL_TEMPLATE = `<!DOCTYPE html>
+<html lang="it" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="x-apple-disable-message-reformatting"/>
+  <title>Bozza Contratto — Lycamobile Retailer</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:AllowPNG/>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100% !important; }
+    * { -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; }
+    img { -ms-interpolation-mode: bicubic; border: 0; display: block; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    a { text-decoration: none; }
+    .ReadMsgBody, .ExternalClass { width: 100%; }
+    .ExternalClass * { line-height: 100%; }
+    body { font-family: 'Segoe UI', Arial, Helvetica, sans-serif; background-color: #EEF1F8; margin: 0; padding: 0; }
+
+    @media only screen and (max-width: 560px) {
+      .email-wrapper { width: 100% !important; padding: 20px 8px !important; }
+      .outer-card { width: 100% !important; }
+      .header-td { padding: 20px !important; }
+      .header-badge { display: none !important; font-size: 0 !important; max-height: 0 !important; overflow: hidden !important; }
+      .body-td { padding: 24px 20px 20px !important; }
+      .footer-td { padding: 16px 20px !important; }
+      .step-icon-td { display: none !important; }
+      .cta-btn { width: 100% !important; }
+      .doc-preview-td { padding: 16px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#EEF1F8;font-family:'Segoe UI',Arial,Helvetica,sans-serif;" width="100%">
+
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#EEF1F8;line-height:1px;">
+  La bozza del tuo contratto di affiliazione Lycamobile è pronta. Revisionala, firmala digitalmente e completa la verifica OTP.&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌
+</div>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#EEF1F8;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+        <tr>
+          <td align="center" style="padding-bottom:14px;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;color:#8A95A8;letter-spacing:0.02em;">
+            Bozza contratto di affiliazione Lycamobile Retailer — Azione richiesta
+          </td>
+        </tr>
+      </table>
+
+      <!--[if mso]>
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" align="center">
+      <tr><td>
+      <![endif]-->
+      <table class="outer-card" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background-color:#ffffff;border-radius:16px;border:1px solid #DDE3EF;border-collapse:separate;overflow:hidden;">
+
+        <tr>
+          <td style="padding:0;border-radius:16px 16px 0 0;overflow:hidden;">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#21264E;">
+              <tr>
+                <td class="header-td" style="padding:26px 36px;">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td valign="middle" style="width:auto;">
+                        <img
+                          src="https://eef221ebb9.imgdist.com/pub/bfra/85md611j/2vz/vdh/2hp/uslogo.png"
+                          alt="Universal Service Logo"
+                          width="60" height="36"
+                          style="display:inline-block;border:0;height:36px;width:auto;max-width:60px;-ms-interpolation-mode:bicubic;"
+                        />
+                      </td>
+                      <td valign="middle" style="width:1px;padding:0 14px;">
+                        <div style="width:1px;height:36px;background-color:rgba(255,255,255,0.18);font-size:0;line-height:0;">&#8203;</div>
+                      </td>
+                      <td valign="middle">
+                        <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#ffffff;letter-spacing:0.01em;line-height:1.3;mso-line-height-rule:exactly;">Universal Service 2006 SRL</p>
+                        <p style="margin:3px 0 0 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;font-weight:400;color:#5B9DEF;letter-spacing:0.02em;line-height:1.3;mso-line-height-rule:exactly;">Rete Retailer Lycamobile &mdash; Contrattualistica</p>
+                      </td>
+                      <td valign="middle" align="right" class="header-badge">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td style="padding:4px 12px;background-color:#1a3a6e;border:1px solid #5B9DEF;border-radius:20px;border-collapse:separate;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#93C2F7;letter-spacing:0.06em;white-space:nowrap;text-transform:uppercase;">
+                              &#128196; Bozza Contratto
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td height="4" style="font-size:0;line-height:0;height:4px;background-color:#006AE0;">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="body-td" style="padding:36px 36px 32px;background-color:#ffffff;">
+
+            <p style="margin:0 0 6px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;color:#1A202C;line-height:1.4;mso-line-height-rule:exactly;">
+              Gentile <span style="color:#006AE0;">{{{RETAILER_NAME}}}</span>,
+            </p>
+            <p style="margin:0 0 24px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#5A6578;line-height:1.8;mso-line-height-rule:exactly;">
+              Il contratto di affiliazione come partner retailer <strong style="color:#21264E;">Lycamobile Italia</strong> è stato predisposto ed è pronto per la tua revisione. Ti chiediamo di <strong style="color:#1A202C;">leggere attentamente la bozza</strong>, verificare tutti i dati anagrafici e commerciali, quindi procedere con la firma digitale e la conferma via codice OTP.
+            </p>
+
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;border-radius:12px;border:1px solid #C8D8F5;border-collapse:separate;overflow:hidden;">
+              <tr>
+                <td style="padding:14px 20px;background-color:#EBF2FF;border-bottom:1px solid #C8D8F5;">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td valign="middle">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td valign="middle" style="padding-right:10px;font-size:22px;line-height:1;">&#128196;</td>
+                            <td valign="middle">
+                              <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#1E3A5F;line-height:1.3;mso-line-height-rule:exactly;">{{{PDF_FILENAME}}}</p>
+                              <p style="margin:2px 0 0 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;color:#4A6FA5;line-height:1.3;mso-line-height-rule:exactly;">PDF &nbsp;&middot;&nbsp; {{{PDF_SIZE}}} &nbsp;&middot;&nbsp; Non firmato</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td valign="middle" align="right">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td style="padding:4px 10px;background-color:#FEF3C7;border:1px solid #FCD34D;border-radius:20px;border-collapse:separate;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap;">
+                              &#9679; Bozza
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td class="doc-preview-td" style="padding:18px 20px;background-color:#F8FAFF;">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td valign="top" width="33%" style="padding-right:8px;padding-bottom:12px;">
+                        <p style="margin:0 0 3px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;color:#8A95A8;text-transform:uppercase;letter-spacing:0.09em;line-height:1.2;mso-line-height-rule:exactly;">Codice Contratto</p>
+                        <p style="margin:0;padding:0;font-family:'Courier New',Courier,monospace;font-size:12px;font-weight:700;color:#1A202C;line-height:1.3;mso-line-height-rule:exactly;">{{{CONTRACT_CODE}}}</p>
+                      </td>
+                      <td valign="top" width="33%" style="padding-right:8px;padding-bottom:12px;">
+                        <p style="margin:0 0 3px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;color:#8A95A8;text-transform:uppercase;letter-spacing:0.09em;line-height:1.2;mso-line-height-rule:exactly;">Data Emissione</p>
+                        <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#1A202C;line-height:1.3;mso-line-height-rule:exactly;">{{{ISSUE_DATE}}}</p>
+                      </td>
+                      <td valign="top" width="34%" style="padding-bottom:12px;">
+                        <p style="margin:0 0 3px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;color:#8A95A8;text-transform:uppercase;letter-spacing:0.09em;line-height:1.2;mso-line-height-rule:exactly;">Scadenza Firma</p>
+                        <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#D93025;line-height:1.3;mso-line-height-rule:exactly;">{{{SIGN_DEADLINE}}}</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td valign="top" width="33%" style="padding-right:8px;">
+                        <p style="margin:0 0 3px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;color:#8A95A8;text-transform:uppercase;letter-spacing:0.09em;line-height:1.2;mso-line-height-rule:exactly;">Punto Vendita</p>
+                        <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#1A202C;line-height:1.3;mso-line-height-rule:exactly;">{{{SHOP_NAME}}}</p>
+                      </td>
+                      <td valign="top" width="33%" style="padding-right:8px;">
+                        <p style="margin:0 0 3px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;color:#8A95A8;text-transform:uppercase;letter-spacing:0.09em;line-height:1.2;mso-line-height-rule:exactly;">Zona Commerciale</p>
+                        <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#1A202C;line-height:1.3;mso-line-height-rule:exactly;">{{{ZONE}}}</p>
+                      </td>
+                      <td valign="top" width="34%">
+                        <p style="margin:0 0 3px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:9px;font-weight:700;color:#8A95A8;text-transform:uppercase;letter-spacing:0.09em;line-height:1.2;mso-line-height-rule:exactly;">Pagine</p>
+                        <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#1A202C;line-height:1.3;mso-line-height-rule:exactly;">{{{PDF_PAGES}}}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:14px 20px;background-color:#EBF2FF;border-top:1px solid #C8D8F5;" align="center">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                    <tr>
+                      <td align="center" style="border-radius:8px;border-collapse:separate;background-color:#006AE0;">
+                        <a href="{{{DOWNLOAD_URL}}}" target="_blank" style="display:inline-block;padding:10px 28px;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:8px;mso-padding-alt:10px 28px;letter-spacing:0.01em;">
+                          &#8675;&nbsp; Scarica la Bozza PDF
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:8px 0 0 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:10px;color:#4A6FA5;line-height:1.4;mso-line-height-rule:exactly;">Il link è valido per 7 giorni dalla data di emissione</p>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#5A6578;line-height:1.7;mso-line-height-rule:exactly;">
+              Per assistenza contatta il tuo referente commerciale Lycamobile o scrivi a&nbsp;<a href="mailto:retailersupport@lycamobile.it" style="color:#006AE0;text-decoration:none;font-weight:600;">retailersupport@lycamobile.it</a>
+            </p>
+
+          </td>
+        </tr>
+
+        <tr>
+          <td class="footer-td" style="padding:20px 36px;background-color:#F4F7FF;border-top:1px solid #DDE3EF;border-radius:0 0 16px 16px;">
+
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:14px;">
+              <tr>
+                <td valign="middle">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="middle" style="padding-right:6px;">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td width="8" height="8" style="width:8px;height:8px;background-color:#22C55E;border-radius:50%;font-size:0;line-height:0;">&nbsp;</td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td valign="middle" style="font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#6B7A94;letter-spacing:0.03em;">
+                        Authorised Lycamobile Distributor
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:5px 0 0 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:10px;font-style:italic;color:#9AA5B8;line-height:1.4;mso-line-height-rule:exactly;">
+                    Email automatica &mdash; non rispondere a questo messaggio
+                  </p>
+                </td>
+                <td valign="middle" align="right">
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:4px 10px;background-color:#EBF2FF;border:1px solid #C8D8F5;border-radius:6px;border-collapse:separate;font-family:'Courier New',Courier,monospace;font-size:10px;font-weight:700;color:#1E3A5F;white-space:nowrap;">
+                        Rif: {{{CONTRACT_CODE}}}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:12px;">
+              <tr>
+                <td height="1" style="font-size:0;line-height:0;height:1px;background-color:#DDE3EF;">&nbsp;</td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 2px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:10px;color:#9AA5B8;line-height:1.5;mso-line-height-rule:exactly;">Universal Service 2006 S.R.L &nbsp;&middot;&nbsp; Via Genzano 195, 00179 Roma</p>
+            <p style="margin:0 0 2px 0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:10px;color:#9AA5B8;line-height:1.5;mso-line-height-rule:exactly;">P.IVA: IT 09037721009 &nbsp;&middot;&nbsp; Distributore autorizzato Lycamobile Italia</p>
+            <p style="margin:0;padding:0;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:10px;color:#9AA5B8;line-height:1.5;mso-line-height-rule:exactly;">&copy; 2025 Universal Service 2006 SRL. Tutti i diritti riservati.</p>
+
+          </td>
+        </tr>
+
+      </table>
+      <!--[if mso]>
+      </td></tr>
+      </table>
+      <![endif]-->
+
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+        <tr>
+          <td align="center" style="padding-top:18px;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;color:#9AA5B8;letter-spacing:0.02em;">
+            Ricevi questa email perch&eacute; &egrave; stato predisposto un contratto di affiliazione a tuo nome sul portale Lycamobile Retailer.
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>`
+
 /**
  * Generate a draft PDF (no signatures) and return it as a base64 string
  * for client-side download.
@@ -774,7 +1047,7 @@ export async function getDraftContractPdfUrlAction(
 
     const { data, error: urlErr } = await supabase.storage
       .from("contracts")
-      .createSignedUrl(pdfPath, 60 * 60, { download: true })
+      .createSignedUrl(pdfPath, 60 * 60 * 24 * 7, { download: true })
     if (urlErr || !data) {
       return { ok: false, error: urlErr?.message || "Could not create URL" }
     }
@@ -821,29 +1094,6 @@ export async function sendDraftContractEmailAction(
 
     const retailerName = `${contract.contact_first_name ?? ""} ${contract.contact_last_name ?? ""}`.trim()
     const retailerCode = (contract.id ?? "").split("-")[0]?.toUpperCase() ?? ""
-    const signDate = new Date().toLocaleDateString("it-IT")
-
-    let html: string | undefined
-    try {
-      const templatePath = path.join(
-        process.cwd(),
-        "public",
-        "Contratto di Affiliazione.html",
-      )
-      const raw = await readFile(templatePath, "utf8")
-      html = raw
-        .replaceAll("{{{RETAILER_NAME}}}", escapeHtml(retailerName || ""))
-        .replaceAll("{{{COMPANY_NAME}}}", escapeHtml(contract.company_name || ""))
-        .replaceAll("{{{RETAILER_CODE}}}", escapeHtml(retailerCode || ""))
-        .replaceAll("{{{SIGN_DATE}}}", escapeHtml(signDate || ""))
-        .replaceAll(
-          "{{{CONTRACT_TYPE}}}",
-          escapeHtml("Contratto di Affiliazione (Bozza)"),
-        )
-        .replaceAll("{{{VAT_NUMBER}}}", escapeHtml(contract.vat_number || ""))
-    } catch {
-      html = undefined
-    }
 
     const { pdfBytes } = await buildDraftContractPdf(contract, user.full_name)
     const base64 = Buffer.from(pdfBytes).toString("base64")
@@ -855,6 +1105,52 @@ export async function sendDraftContractEmailAction(
       "-",
     )
 
+    const now = new Date()
+    const issueDate = now.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+    const deadline = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    const signDeadline = deadline.toLocaleDateString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+
+    const pdfSizeKb = Math.max(1, Math.round(pdfBytes.length / 1024))
+    const pdfFilename = `Contratto_Affiliazione_BOZZA_${safeRetailerCode}.pdf`
+
+    const pdfPath = `${id}/draft-email-${Date.now()}.pdf`
+    const { error: upErr } = await supabase.storage
+      .from("contracts")
+      .upload(pdfPath, pdfBytes, {
+        contentType: "application/pdf",
+        upsert: true,
+      })
+    if (upErr) return { ok: false, error: upErr.message }
+
+    const { data: urlData, error: urlErr } = await supabase.storage
+      .from("contracts")
+      .createSignedUrl(pdfPath, 60 * 60 * 24 * 7, { download: true })
+    if (urlErr || !urlData) {
+      return { ok: false, error: urlErr?.message || "Could not create URL" }
+    }
+
+    const contractCode = retailerCode || (contract.id ?? "")
+
+    const html = DRAFT_CONTRACT_EMAIL_TEMPLATE
+      .replaceAll("{{{RETAILER_NAME}}}", escapeHtml(retailerName || ""))
+      .replaceAll("{{{CONTRACT_CODE}}}", escapeHtml(contractCode || ""))
+      .replaceAll("{{{ISSUE_DATE}}}", escapeHtml(issueDate))
+      .replaceAll("{{{SIGN_DEADLINE}}}", escapeHtml(signDeadline))
+      .replaceAll("{{{SHOP_NAME}}}", escapeHtml(contract.shop_name || ""))
+      .replaceAll("{{{ZONE}}}", escapeHtml(contract.zone ?? "—"))
+      .replaceAll("{{{PDF_FILENAME}}}", escapeHtml(pdfFilename))
+      .replaceAll("{{{PDF_SIZE}}}", escapeHtml(`${pdfSizeKb} KB`))
+      .replaceAll("{{{PDF_PAGES}}}", escapeHtml("—"))
+      .replaceAll("{{{DOWNLOAD_URL}}}", escapeHtml(urlData.signedUrl))
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -865,11 +1161,11 @@ export async function sendDraftContractEmailAction(
         from,
         to: recipients,
         subject: `Bozza contratto — ${contract.company_name}`,
-        ...(html ? { html } : {}),
+        html,
         text: `Gentile ${contract.contact_first_name},\n\nin allegato trovate la bozza del contratto relativo al punto vendita "${contract.shop_name}".\n\nGrazie,\nUniversal Service 2006 S.R.L`,
         attachments: [
           {
-            filename: `Contratto_Affiliazione_BOZZA_${safeRetailerCode}.pdf`,
+            filename: pdfFilename,
             content: base64,
           },
         ],
