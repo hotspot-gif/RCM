@@ -13,23 +13,26 @@ function RemoteSignShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-[#EEF1F8]">
       <header className="bg-[#21254F]">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center">
-          <Image
-            src="https://eef221ebb9.imgdist.com/pub/bfra/85md611j/2vz/vdh/2hp/uslogo.png"
-            alt="Universal Service Logo"
-            width={160}
-            height={45}
-            className="h-9 w-auto object-contain"
-            priority
-          />
-          <div className="text-sm text-white/90 sm:ml-4">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:px-6">
+          <div className="flex items-center">
+            <Image
+              src="https://eef221ebb9.imgdist.com/pub/bfra/85md611j/2vz/vdh/2hp/uslogo.png"
+              alt="Universal Service Logo"
+              width={160}
+              height={45}
+              className="h-9 w-auto object-contain"
+              priority
+            />
+          </div>
+          <div className="flex-none hidden h-10 w-px bg-white/25 sm:block" />
+          <div className="text-sm text-white/90 sm:ml-4 sm:border-l sm:border-white/10 sm:pl-4">
             <p className="font-semibold text-white">Universal Service 2006 SRL</p>
             <p>Rete Retailer Lycamobile — Contrattualistica</p>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl flex-1 p-6">{children}</main>
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 sm:px-6">{children}</main>
 
       <footer className="bg-[#21254F]">
         <div className="mx-auto w-full max-w-2xl px-6 py-4 text-xs leading-relaxed text-white/80">
@@ -92,7 +95,10 @@ export default async function RetailerSignPage({
       <RemoteSignShell>
         <div className="flex flex-col gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Firma contratto</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Consenso e Firma Digitale</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Accetta i termini e apponi la tua firma
+            </p>
             <p className="text-sm text-muted-foreground">{contract.company_name}</p>
           </div>
 

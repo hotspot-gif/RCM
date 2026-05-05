@@ -234,18 +234,13 @@ export function RetailerSignPanel(props: {
       </CardHeader>
       <CardContent className="pt-6">
         <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-4 flex items-center justify-between gap-4 text-sm font-semibold text-slate-900">
+          <div className="mb-4 flex flex-col gap-2 text-sm font-semibold text-slate-900 md:flex-row md:items-center md:justify-between">
             <span className={cn(step === 1 ? "text-slate-900" : "text-slate-500")}>Firma</span>
             <span className={cn(step === 2 ? "text-slate-900" : "text-slate-500")}>OTP</span>
             <span className={cn(step === 3 ? "text-slate-900" : "text-slate-500")}>Completato</span>
           </div>
           <div className="mb-3">
             <Progress value={progressValue} className="h-2" />
-          </div>
-          <div className="grid grid-cols-3 gap-4 text-xs uppercase tracking-[0.16em] text-slate-500">
-            <div className="text-center">Firma</div>
-            <div className="text-center">OTP</div>
-            <div className="text-center">Completato</div>
           </div>
         </div>
 
@@ -298,9 +293,9 @@ export function RetailerSignPanel(props: {
 
           <div className={step === 2 ? "flex flex-col gap-6" : "hidden"}>
             <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="text-sm font-semibold text-brand-navy">Verifica OTP</div>
+              <div className="text-sm font-semibold text-brand-navy">Verifica Identità OTP</div>
               <div className="mt-1 text-sm text-slate-600">
-                Inserisci il codice OTP inviato a {otpSentTo ?? "la tua email"}.
+                Inserisci il codice ricevuto via email per finalizzare.
               </div>
               <div className="mt-4 flex justify-center">
                 <InputOTP
