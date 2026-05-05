@@ -13,7 +13,7 @@ function RemoteSignShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-[#EEF1F8]">
       <header className="bg-[#21254F]">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:px-6">
+        <div className="mx-auto flex w-full max-w-2xl flex-row flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center">
             <Image
               src="https://eef221ebb9.imgdist.com/pub/bfra/85md611j/2vz/vdh/2hp/uslogo.png"
@@ -24,8 +24,8 @@ function RemoteSignShell({ children }: { children: React.ReactNode }) {
               priority
             />
           </div>
-          <div className="flex-none hidden h-10 w-px bg-white/25 sm:block" />
-          <div className="text-sm text-white/90 sm:ml-4 sm:border-l sm:border-white/10 sm:pl-4">
+          <div className="flex-none h-10 w-px bg-white/25" />
+          <div className="min-w-0 text-sm text-white/90">
             <p className="font-semibold text-white">Universal Service 2006 SRL</p>
             <p>Rete Retailer Lycamobile — Contrattualistica</p>
           </div>

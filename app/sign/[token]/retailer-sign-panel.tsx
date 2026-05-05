@@ -234,7 +234,7 @@ export function RetailerSignPanel(props: {
       </CardHeader>
       <CardContent className="pt-6">
         <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-4 flex flex-col gap-2 text-sm font-semibold text-slate-900 md:flex-row md:items-center md:justify-between">
+          <div className="mb-4 flex flex-row flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-900">
             <span className={cn(step === 1 ? "text-slate-900" : "text-slate-500")}>Firma</span>
             <span className={cn(step === 2 ? "text-slate-900" : "text-slate-500")}>OTP</span>
             <span className={cn(step === 3 ? "text-slate-900" : "text-slate-500")}>Completato</span>
