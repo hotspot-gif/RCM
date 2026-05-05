@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { Progress } from "@/components/ui/progress"
 import { SignaturePad, type SignaturePadHandle } from "@/components/contracts/signature-pad"
+import { cn } from "@/lib/utils"
 import {
   requestContractOtpByTokenAction,
   saveRetailerSignatureByTokenAction,
@@ -17,6 +19,7 @@ import {
 export function RetailerSignPanel(props: {
   token: string
   initial: {
+    contractId: string
     companyName: string
     contactFirstName: string
     contactLastName: string
@@ -51,6 +54,8 @@ export function RetailerSignPanel(props: {
   const completed =
     !!props.initial.signLinkUsedAt ||
     (props.initial.retailerSignaturePath && otpVerifiedAt)
+
+  const progressValue = step === 1 ? 33 : step === 2 ? 66 : 100
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -143,14 +148,79 @@ export function RetailerSignPanel(props: {
     return (
       <Card className="border-2 shadow-lg">
         <CardHeader className="border-b bg-muted/30">
-          <CardTitle className="text-xl">Firma completata</CardTitle>
+          <CardTitle className="text-xl">Contratto finalizzato</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="rounded-lg border bg-green-50 p-4 text-green-800 flex items-center gap-3">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <span className="text-sm font-medium">
-              Grazie, la firma e la verifica OTP sono state completate.
-            </span>
+          <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="mt-1 h-6 w-6 text-green-600" />
+                <div>
+                  <p className="text-lg font-semibold text-green-900">
+                    Contratto finalizzato con successo!
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">
+                    La tua firma digitale è stata acquisita e il contratto di affiliazione
+                    Lycamobile è ora attivo.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                Contratto
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">
+                #{props.initial.contractId}
+              </p>
+            </div>
+
+            <div className="rounded-lg border bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                Stato
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">
+                {props.initial.status || "Attivo"}
+              </p>
+            </div>
+
+            <div className="rounded-lg border bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                Azienda
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">
+                {props.initial.companyName}
+              </p>
+            </div>
+
+            <div className="rounded-lg border bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                Referente
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">
+                {props.initial.contactFirstName} {props.initial.contactLastName}
+              </p>
+            </div>
+
+            <div className="rounded-lg border bg-white p-4 shadow-sm sm:col-span-2">
+              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                Verifica OTP
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">
+                {otpVerifiedAt
+                  ? new Date(otpVerifiedAt).toLocaleString("it-IT", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "Completata"}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -163,6 +233,22 @@ export function RetailerSignPanel(props: {
         <CardTitle className="text-xl">Firma del retailer</CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="mb-4 flex items-center justify-between gap-4 text-sm font-semibold text-slate-900">
+            <span className={cn(step === 1 ? "text-slate-900" : "text-slate-500")}>Firma</span>
+            <span className={cn(step === 2 ? "text-slate-900" : "text-slate-500")}>OTP</span>
+            <span className={cn(step === 3 ? "text-slate-900" : "text-slate-500")}>Completato</span>
+          </div>
+          <div className="mb-3">
+            <Progress value={progressValue} className="h-2" />
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-xs uppercase tracking-[0.16em] text-slate-500">
+            <div className="text-center">Firma</div>
+            <div className="text-center">OTP</div>
+            <div className="text-center">Completato</div>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-6">
           <div className={step === 1 ? "flex flex-col gap-6" : "hidden"}>
             <SignaturePad

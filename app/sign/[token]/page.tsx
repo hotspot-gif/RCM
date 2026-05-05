@@ -13,7 +13,7 @@ function RemoteSignShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-[#EEF1F8]">
       <header className="bg-[#21254F]">
-        <div className="mx-auto flex w-full max-w-2xl items-center px-6 py-4">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center">
           <Image
             src="https://eef221ebb9.imgdist.com/pub/bfra/85md611j/2vz/vdh/2hp/uslogo.png"
             alt="Universal Service Logo"
@@ -22,6 +22,10 @@ function RemoteSignShell({ children }: { children: React.ReactNode }) {
             className="h-9 w-auto object-contain"
             priority
           />
+          <div className="text-sm text-white/90 sm:ml-4">
+            <p className="font-semibold text-white">Universal Service 2006 SRL</p>
+            <p>Rete Retailer Lycamobile — Contrattualistica</p>
+          </div>
         </div>
       </header>
 
@@ -95,6 +99,7 @@ export default async function RetailerSignPage({
           <RetailerSignPanel
             token={token}
             initial={{
+              contractId: contract.id,
               companyName: contract.company_name,
               contactFirstName: contract.contact_first_name,
               contactLastName: contract.contact_last_name,
