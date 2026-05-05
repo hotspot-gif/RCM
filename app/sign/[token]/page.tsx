@@ -95,10 +95,6 @@ export default async function RetailerSignPage({
       <RemoteSignShell>
         <div className="flex flex-col gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Consenso e Firma Digitale</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Accetta i termini e apponi la tua firma
-            </p>
             <p className="text-sm text-muted-foreground">{contract.company_name}</p>
           </div>
 

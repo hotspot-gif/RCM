@@ -230,7 +230,9 @@ export function RetailerSignPanel(props: {
   return (
     <Card className="border-2 shadow-lg">
       <CardHeader className="border-b bg-muted/30">
-        <CardTitle className="text-xl">Firma del retailer</CardTitle>
+        <CardTitle className="text-xl">
+          {step === 2 ? "Verifica Identità OTP" : "Consenso e Firma Digitale"}
+        </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
         <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
