@@ -86,13 +86,83 @@ function isExpired(iso: string | null | undefined) {
   return Number.isNaN(t) || Date.now() > t
 }
 
+function extractIpCandidate(value: string | null): string | null {
+  if (!value) return null
+  return value.trim().replace(/^\[(.*)]$/, "$1")
+}
+
+function normalizeIp(ip: string | null): string | null {
+  if (!ip) return null
+  let cleaned = ip.trim()
+  if (!cleaned) return null
+
+  // Remove a port when present in IPv4 or bracketed IPv6 notation.
+  const portMatch = cleaned.match(/^(.*?)(?:\:(\d+))$/)
+  if (portMatch) {
+    const maybeIp = portMatch[1]
+    const port = portMatch[2]
+    if (/^\d+$/.test(port) && maybeIp) {
+      cleaned = maybeIp
+    }
+  }
+
+  if (cleaned.startsWith("::ffff:")) {
+    cleaned = cleaned.replace("::ffff:", "")
+  }
+
+  return cleaned || null
+}
+
+function isPrivateIp(ip: string): boolean {
+  return Boolean(
+    ip.match(/^127\./) ||
+      ip.match(/^10\./) ||
+      ip.match(/^192\.168\./) ||
+      ip.match(/^169\.254\./) ||
+      ip.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./) ||
+      ip === "::1" ||
+      ip.startsWith("fc") ||
+      ip.startsWith("fd") ||
+      ip.startsWith("fe80")
+  )
+}
+
+function getFirstPublicIp(values: string[]): string | null {
+  const normalized = values
+    .map((value) => extractIpCandidate(value))
+    .map(normalizeIp)
+    .filter(Boolean) as string[]
+
+  const publicIp = normalized.find((ip) => !isPrivateIp(ip))
+  return publicIp ?? normalized[0] ?? null
+}
+
+function parseForwardedHeader(value: string | null): string | null {
+  if (!value) return null
+  const entries = value.split(",").map((item) => item.trim())
+  for (const entry of entries) {
+    const match = entry.match(/for=(?:"?\[?([^\]";]+)\]?"?)/i)
+    if (match?.[1]) {
+      return normalizeIp(match[1])
+    }
+  }
+  return null
+}
+
 async function getRequestMeta() {
   const h = await headers()
   const forwardedFor = h.get("x-forwarded-for")
+  const forwarded = h.get("forwarded")
+  const xRealIp = h.get("x-real-ip")
+  const xClientIp = h.get("x-client-ip")
+
   const ip =
-    (forwardedFor ? forwardedFor.split(",")[0]?.trim() : null) ??
-    h.get("x-real-ip") ??
+    parseForwardedHeader(forwarded) ??
+    getFirstPublicIp(forwardedFor ? forwardedFor.split(",") : []) ??
+    normalizeIp(extractIpCandidate(xRealIp)) ??
+    normalizeIp(extractIpCandidate(xClientIp)) ??
     null
+
   const userAgent = h.get("user-agent") ?? null
   return { ip, userAgent }
 }
