@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { MoreHorizontal, Pencil, Trash2, Mail, Shield, MapPin, CheckCircle2, XCircle } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, Mail, Shield, MapPin, CheckCircle2, XCircle, Key, Copy, Check } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,14 +21,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Spinner } from "@/components/ui/spinner"
 import type { AppUser } from "@/lib/types"
-import { deleteUserAction } from "@/app/dashboard/users/actions"
+import { 
+  deleteUserAction, 
+  sendUserPasswordResetEmailAction, 
+  resetUserPasswordToTemporaryAction 
+} from "@/app/dashboard/users/actions"
 import { EditUserDialog } from "./edit-user-dialog"
 
 export function UsersTable({ users }: { users: AppUser[] }) {
   const [editing, setEditing] = useState<AppUser | null>(null)
+  const [tempPasswordData, setTempPasswordData] = useState<{ password: string; user: AppUser } | null>(null)
   const [pending, startTransition] = useTransition()
+  const [copied, setCopied] = useState(false)
 
   function onDelete(user: AppUser) {
     if (!confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) return
@@ -37,6 +52,32 @@ export function UsersTable({ users }: { users: AppUser[] }) {
       if (!res.ok) toast.error(res.error)
       else toast.success("User deleted successfully")
     })
+  }
+
+  function onSendResetEmail(user: AppUser) {
+    startTransition(async () => {
+      const res = await sendUserPasswordResetEmailAction({ email: user.email })
+      if (!res.ok) toast.error(res.error)
+      else toast.success(`Reset link sent to ${user.email}`)
+    })
+  }
+
+  function onSetTempPassword(user: AppUser) {
+    startTransition(async () => {
+      const res = await resetUserPasswordToTemporaryAction(user.id)
+      if (!res.ok) toast.error(res.error)
+      else {
+        setTempPasswordData({ password: res.data, user })
+        toast.success(`Temporary password generated for ${user.full_name}`)
+      }
+    })
+  }
+
+  function copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+    toast.success("Copied to clipboard")
   }
 
   function getInitials(name: string) {
@@ -148,35 +189,135 @@ export function UsersTable({ users }: { users: AppUser[] }) {
                 )}
               </TableCell>
               <TableCell className="text-right pr-6">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-brand-navy/10">
-                      <MoreHorizontal className="h-4 w-4 text-brand-navy" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuLabel className="text-xs text-muted-foreground font-semibold px-2 py-1.5 uppercase tracking-wider">Actions</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setEditing(u)} className="cursor-pointer">
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Modify Account
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
+                <div className="flex items-center justify-end gap-2">
+                  <div className="hidden group-hover:flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-200">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-brand-navy hover:bg-brand-navy/5"
+                      title="Email Reset Link"
+                      onClick={() => onSendResetEmail(u)}
                       disabled={pending}
-                      onClick={() => onDelete(u)}
-                      className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Remove User
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-brand-navy hover:bg-brand-navy/5"
+                      title="Set Temp Password"
+                      onClick={() => onSetTempPassword(u)}
+                      disabled={pending}
+                    >
+                      <Key className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 hover:bg-brand-navy/10 focus-visible:ring-brand-navy shrink-0"
+                        disabled={pending}
+                      >
+                        {pending ? <Spinner className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4 text-brand-navy" />}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel className="text-xs text-muted-foreground font-semibold px-2 py-1.5 uppercase tracking-wider">Account Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => setEditing(u)} 
+                        className="cursor-pointer focus:bg-brand-navy/5 focus:text-brand-navy"
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Modify Account Details
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold px-2 py-1 uppercase tracking-tighter">Security & Access</DropdownMenuLabel>
+                      
+                      <DropdownMenuItem 
+                        onClick={() => onSendResetEmail(u)}
+                        className="cursor-pointer focus:bg-brand-navy/5 focus:text-brand-navy"
+                      >
+                        <Mail className="mr-2 h-4 w-4" />
+                        Email Reset Link
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem 
+                        onClick={() => onSetTempPassword(u)}
+                        className="cursor-pointer focus:bg-brand-navy/5 focus:text-brand-navy"
+                      >
+                        <Key className="mr-2 h-4 w-4" />
+                        Set Temp Password
+                      </DropdownMenuItem>
+                      
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        disabled={pending}
+                        onClick={() => onDelete(u)}
+                        className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-medium"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remove User
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {/* Temp Password Dialog */}
+      <Dialog open={!!tempPasswordData} onOpenChange={(open) => !open && setTempPasswordData(null)}>
+        <DialogContent className="sm:max-w-md border-2 border-brand-navy/20">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-brand-navy flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Temporary Password Set
+            </DialogTitle>
+            <DialogDescription>
+              A temporary password has been generated for <strong>{tempPasswordData?.user.full_name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex flex-col gap-2 rounded-lg bg-brand-navy/[0.03] p-4 border-2 border-dashed border-brand-navy/20">
+              <p className="text-[10px] font-black text-brand-navy uppercase tracking-widest opacity-50">Generated Password</p>
+              <div className="flex items-center justify-between gap-3">
+                <code className="flex-1 rounded-md bg-white px-3 py-2 text-2xl font-mono font-black text-brand-navy tracking-[0.2em] border shadow-sm">
+                  {tempPasswordData?.password}
+                </code>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => tempPasswordData && copyToClipboard(tempPasswordData.password)}
+                  className="h-12 w-12 shrink-0 border-brand-navy/20 hover:border-brand-navy hover:bg-brand-navy/5"
+                >
+                  {copied ? <Check className="h-5 w-5 text-emerald-600" /> : <Copy className="h-5 w-5 text-brand-navy" />}
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 flex gap-2">
+              <Shield className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>
+                Provide this password to the user manually. They must use it to log in and are required to change it immediately after.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              className="bg-brand-navy hover:bg-brand-navy/90 w-full"
+              onClick={() => setTempPasswordData(null)}
+            >
+              Done, I've shared it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <EditUserDialog
         user={editing}
