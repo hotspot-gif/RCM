@@ -18,6 +18,7 @@ import {
   getDraftContractPdfUrlAction,
   sendDraftContractEmailAction,
 } from "@/app/dashboard/contracts/actions"
+import { useI18n } from "@/lib/i18n/i18n-context"
 
 function isIosSafari() {
   if (typeof navigator === "undefined") return false
@@ -41,6 +42,7 @@ export function ContractActions({
   contractId: string
   status: string
 }) {
+  const { t } = useI18n()
   const [pendingDownload, startDownload] = useTransition()
   const [pendingEmail, startEmail] = useTransition()
   const [pendingDraft, startDraft] = useTransition()
@@ -75,7 +77,7 @@ export function ContractActions({
       }
 
       setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000)
-      toast.success("Draft PDF generated")
+      toast.success(t("draftPdfGenerated"))
     })
   }
 
@@ -86,7 +88,7 @@ export function ContractActions({
         toast.error(res.error)
         return
       }
-      toast.success(`Email sent to ${res.data!.sentTo.join(", ")}`)
+      toast.success(t("emailSentTo").replace("{email}", res.data!.sentTo.join(", ")))
     })
   }
 
@@ -100,7 +102,7 @@ export function ContractActions({
 
       try {
         await navigator.clipboard.writeText(res.data!.url)
-        toast.success("Draft PDF link copied")
+        toast.success(t("draftPdfLinkCopied"))
       } catch {
         toast.error("Could not copy to clipboard")
       }
@@ -153,7 +155,7 @@ export function ContractActions({
         toast.error(res.error)
         return
       }
-      toast.success(`Email sent to ${res.data!.sentTo.join(", ")}`)
+      toast.success(t("emailSentTo").replace("{email}", res.data!.sentTo.join(", ")))
     })
   }
 
@@ -172,7 +174,7 @@ export function ContractActions({
             ) : (
               <FileText className="mr-1.5 h-4 w-4" aria-hidden="true" />
             )}
-            Download Draft (Unsigned)
+            {t("downloadDraft")}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -186,7 +188,7 @@ export function ContractActions({
                 ) : (
                   <Share2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 )}
-                Share Draft
+                {t("shareDraft")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -199,11 +201,11 @@ export function ContractActions({
                 onClick={shareDraftWhatsApp}
               >
                 <MessageCircle className="h-4 w-4" />
-                WhatsApp
+                {t("whatsapp")}
               </DropdownMenuItem>
               <DropdownMenuItem disabled={pendingDraftShare} onClick={copyDraftUrl}>
                 <Link className="h-4 w-4" />
-                Copy URL
+                {t("copyUrl")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -215,7 +217,7 @@ export function ContractActions({
         ) : (
           <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
         )}
-        Download PDF
+        {t("downloadPdf")}
       </Button>
       <Button
         onClick={email}
@@ -227,7 +229,7 @@ export function ContractActions({
         ) : (
           <Mail className="mr-1.5 h-4 w-4" aria-hidden="true" />
         )}
-        Send by email
+        {t("sendByEmail")}
       </Button>
     </div>
   )

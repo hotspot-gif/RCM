@@ -24,9 +24,11 @@ import {
   sendRetailerSigningLinkAction,
   verifyContractOtpAction,
 } from "@/app/dashboard/contracts/actions"
+import { useI18n } from "@/lib/i18n/i18n-context"
 
 export function ContractSignPanel({ contractId }: { contractId: string }) {
   const router = useRouter()
+  const { t } = useI18n()
   const retailerRef = useRef<SignaturePadHandle>(null)
   const staffRef = useRef<SignaturePadHandle>(null)
   const [pending, startTransition] = useTransition()
@@ -106,7 +108,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       const next = await refreshSigningState()
       const nextCompleted = !!next?.retailerSignaturePath && !!next?.otpVerifiedAt
       if (!prevCompleted && nextCompleted) {
-        toast.success("Retailer completed signing")
+        toast.success(t("retailerCompleted"))
         router.refresh()
       }
     }
@@ -121,15 +123,15 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
   function onNext() {
     const retailerData = retailerRef.current?.toDataUrl()
     if (!retailerData) {
-      toast.error("Retailer signature is required")
+      toast.error(t("retailerSignatureRequired"))
       return
     }
     if (!ack) {
-      toast.error("Confirm acceptance of the terms before signing.")
+      toast.error(t("acceptanceRequired"))
       return
     }
     if (!gdpr) {
-      toast.error("GDPR privacy consent is required.")
+      toast.error(t("gdprRequired"))
       return
     }
     startTransition(async () => {
@@ -153,7 +155,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       setOtpSentTo(res.data!.sentTo)
       setOtpVerifiedAt(null)
       setStep(2)
-      toast.success(`OTP sent to ${res.data!.sentTo}`)
+      toast.success(t("otpSent").replace("{email}", res.data!.sentTo))
     })
   }
 
@@ -166,7 +168,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       }
       setOtpVerifiedAt(res.data!.verifiedAt)
       setStep(3)
-      toast.success("OTP verified")
+      toast.success(t("otpVerified"))
       await refreshSigningState()
     })
   }
@@ -181,7 +183,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       setOtp("")
       setOtpSentTo(res.data!.sentTo)
       setOtpVerifiedAt(null)
-      toast.success(`OTP re-sent to ${res.data!.sentTo}`)
+      toast.success(t("otpSent").replace("{email}", res.data!.sentTo))
     })
   }
 
@@ -195,9 +197,9 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       setRemoteLink(res.data!.url)
       await refreshSigningState()
       if (res.data!.emailed && res.data!.sentTo) {
-        toast.success(`Signing link sent to ${res.data!.sentTo}`)
+        toast.success(t("signingLinkSent").replace("{email}", res.data!.sentTo))
       } else {
-        toast.success("Signing link generated. Copy and share it with the retailer.")
+        toast.success(t("signingLinkGenerated"))
       }
     })
   }
@@ -211,17 +213,17 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     const hasRetailerSig = !!retailerData || !!signingState?.retailerSignaturePath
     if (!hasRetailerSig || !ack || !gdpr) {
       setStep(1)
-      toast.error("Retailer signature, acceptance and GDPR consent are required")
+      toast.error(t("retailerSignatureRequired"))
       return
     }
     if (!otpVerifiedAt) {
       setStep(2)
-      toast.error("OTP verification is required")
+      toast.error(t("otpVerificationRequired"))
       return
     }
     
     if (!staffData) {
-      toast.error("Staff signature is required")
+      toast.error(t("staffSignatureRequired"))
       return
     }
 
@@ -235,7 +237,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
         toast.error(res.error)
         return
       }
-      toast.success("Contract signed and PDF generated")
+      toast.success(t("contractSigned"))
       router.refresh()
     })
   }
@@ -245,13 +247,13 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       <CardHeader className="border-b bg-muted/30">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <CardTitle className="text-xl">Contract Finalization</CardTitle>
+            <CardTitle className="text-xl">{t("contractFinalization")}</CardTitle>
             <CardDescription>
               {step === 1
-                ? "Step 1: Retailer Acceptance"
+                ? t("stepRetailerSignature")
                 : step === 2
-                  ? "Step 2: OTP Verification"
-                  : "Step 3: Staff Verification"}
+                  ? t("stepOtpVerification")
+                  : t("stepStaffSignature")}
             </CardDescription>
           </div>
           <div className="flex gap-1 sm:shrink-0">
@@ -267,9 +269,9 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
             <div className="rounded-lg border bg-muted/30 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-brand-navy">Remote signing link</div>
+                  <div className="text-sm font-semibold text-brand-navy">{t("remoteSigningLinkLabel")}</div>
                   <div className="mt-1 text-sm text-slate-600">
-                    Send a link to the retailer to sign and complete OTP from their own device.
+                    {t("remoteSigningLinkDesc")}
                   </div>
                 </div>
                 <Button
@@ -280,7 +282,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                   className="w-full sm:w-auto"
                 >
                   <Link2 className="mr-2 h-4 w-4" />
-                  Send link
+                  {t("sendLink")}
                 </Button>
               </div>
 
@@ -294,15 +296,15 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                       onClick={async () => {
                         try {
                           await navigator.clipboard.writeText(remoteLink)
-                          toast.success("Link copied")
+                          toast.success(t("linkCopied"))
                         } catch {
-                          toast.error("Could not copy link")
+                          toast.error(t("linkCopyError"))
                         }
                       }}
                       className="w-full sm:w-auto"
                     >
                       <Copy className="mr-2 h-4 w-4" />
-                      Copy
+                      {t("copy")}
                     </Button>
                     <Button
                       type="button"
@@ -311,7 +313,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                       className="w-full sm:w-auto"
                     >
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Open
+                      {t("open")}
                     </Button>
                   </div>
                 </div>
@@ -320,8 +322,8 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
 
             <SignaturePad
               ref={retailerRef}
-              label="Retailer signature"
-              description="Draw the retailer's signature in the box below."
+              label={t("retailerSignatureLabel")}
+              description={t("retailerSignatureDesc")}
             />
 
             <p className="text-sm text-slate-600">
@@ -336,9 +338,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                 onChange={(e) => setAck(e.target.checked)}
               />
               <span className="leading-relaxed font-medium text-brand-navy">
-                Confermo di aver letto, compreso e accettato tutte le disposizioni del
-                Contratto di distribuzione, il Prospetto delle condizioni di vendita, il
-                Listino Prezzi e l&apos;Allegato sulla prevenzione delle frodi.
+                {t("termsAcceptance")}
               </span>
             </label>
 
@@ -350,8 +350,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                 onChange={(e) => setGdpr(e.target.checked)}
               />
               <span className="leading-relaxed font-medium text-brand-navy">
-                Acconsento al trattamento dei dati personali ai sensi del Regolamento (UE) 2016/679 (GDPR) per le finalità
-                connesse alla gestione del contratto e agli adempimenti di legge.
+                {t("gdprConsent")}
               </span>
             </label>
 
@@ -362,7 +361,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                 className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8"
               >
                 {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                Next Step
+                {t("next")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -371,17 +370,17 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
           <div className={step === 2 ? "flex flex-col gap-6" : "hidden"}>
             <div className="rounded-lg border bg-green-50 p-4 text-green-800 flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="text-sm font-medium">Retailer has signed and accepted terms.</span>
+              <span className="text-sm font-medium">{t("retailerSignedAccepted")}</span>
             </div>
 
             <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="text-sm font-semibold text-brand-navy">OTP verification</div>
+              <div className="text-sm font-semibold text-brand-navy">{t("otpVerification")}</div>
               <div className="mt-1 text-sm text-slate-600">
-                Enter the 6-digit OTP sent to {otpSentTo ?? "the retailer email"}.
+                {t("otpVerificationDesc").replace("{email}", otpSentTo ?? "the retailer email")}
               </div>
               {autoRefreshActive ? (
                 <div className="mt-2 text-xs text-muted-foreground">
-                  Waiting for retailer completion… auto-refreshing.
+                  {t("waitingForRetailer")}
                 </div>
               ) : null}
               <div className="mt-4 flex justify-center">
@@ -418,11 +417,11 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                   className="w-full sm:w-auto"
                 >
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Retailer
+                  {t("backToRetailer")}
                 </Button>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Button variant="outline" onClick={onResendOtp} disabled={pending} className="w-full sm:w-auto">
-                    Resend OTP
+                    {t("resendOtp")}
                   </Button>
                   <Button
                     onClick={onVerifyOtp}
@@ -430,7 +429,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                     className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8"
                   >
                     {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                    Verify OTP
+                    {t("verifyOtp")}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
@@ -441,19 +440,19 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
           <div className={step === 3 ? "flex flex-col gap-6" : "hidden"}>
             <div className="rounded-lg border bg-green-50 p-4 text-green-800 flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="text-sm font-medium">Retailer has signed and OTP is verified.</span>
+              <span className="text-sm font-medium">{t("retailerSignedOtpVerified")}</span>
             </div>
 
             <SignaturePad
               ref={staffRef}
-              label="Staff signature"
-              description="Staff / Hotspot Manager signs here to finalize the contract."
+              label={t("staffSignatureLabel")}
+              description={t("staffSignatureDesc")}
             />
 
             <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
               <Button variant="outline" onClick={() => setStep(2)} disabled={pending} className="w-full sm:w-auto">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to OTP
+                {t("backToOtp")}
               </Button>
               <Button
                 onClick={onSubmit}
@@ -461,7 +460,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                 className="w-full bg-brand-green font-bold text-brand-navy hover:bg-brand-green/90 sm:w-auto sm:px-8"
               >
                 {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                Complete & Generate PDF
+                {t("completeAndGeneratePdf")}
               </Button>
             </div>
           </div>

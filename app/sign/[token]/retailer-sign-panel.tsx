@@ -15,6 +15,7 @@ import {
   saveRetailerSignatureByTokenAction,
   verifyContractOtpByTokenAction,
 } from "./actions"
+import { useI18n } from "@/lib/i18n/i18n-context"
 
 export function RetailerSignPanel(props: {
   token: string
@@ -32,6 +33,7 @@ export function RetailerSignPanel(props: {
     signLinkUsedAt: string | null | undefined
   }
 }) {
+  const { t, language } = useI18n()
   const retailerRef = useRef<SignaturePadHandle>(null)
   const [pending, startTransition] = useTransition()
   const [ack, setAck] = useState(!!props.initial.retailerAck)
@@ -67,15 +69,15 @@ export function RetailerSignPanel(props: {
   function onSendOtp() {
     const retailerData = retailerRef.current?.toDataUrl()
     if (!retailerData) {
-      toast.error("Firma richiesta")
+      toast.error(t("signatureRequired"))
       return
     }
     if (!ack) {
-      toast.error("Conferma accettazione richiesta")
+      toast.error(t("ackRequired"))
       return
     }
     if (!gdpr) {
-      toast.error("Consenso GDPR richiesto")
+      toast.error(t("gdprRequiredShort"))
       return
     }
 
@@ -101,7 +103,7 @@ export function RetailerSignPanel(props: {
       setOtpSentTo(res.data!.sentTo)
       setOtpVerifiedAt(null)
       setStep(2)
-      toast.success(`OTP inviato a ${res.data!.sentTo}`)
+      toast.success(t("otpSentSuccess").replace("{email}", res.data!.sentTo))
     })
   }
 
@@ -114,7 +116,7 @@ export function RetailerSignPanel(props: {
       }
       setOtpVerifiedAt(res.data!.verifiedAt)
       setStep(3)
-      toast.success("OTP verificato")
+      toast.success(t("otpVerifiedSuccess"))
     })
   }
 
@@ -127,7 +129,7 @@ export function RetailerSignPanel(props: {
       }
       setOtp("")
       setOtpSentTo(res.data!.sentTo)
-      toast.success(`OTP reinviato a ${res.data!.sentTo}`)
+      toast.success(t("otpResentSuccess").replace("{email}", res.data!.sentTo))
     })
   }
 
@@ -135,10 +137,10 @@ export function RetailerSignPanel(props: {
     return (
       <Card className="border-2 shadow-lg">
         <CardHeader className="border-b bg-muted/30">
-          <CardTitle className="text-xl">Link scaduto</CardTitle>
+          <CardTitle className="text-xl">{t("linkExpiredTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
-          Il link di firma è scaduto. Richiedi un nuovo link al tuo referente.
+          {t("linkExpiredDesc")}
         </CardContent>
       </Card>
     )
@@ -148,7 +150,7 @@ export function RetailerSignPanel(props: {
     return (
       <Card className="border-2 shadow-lg">
         <CardHeader className="border-b bg-muted/30">
-          <CardTitle className="text-xl">Contratto finalizzato</CardTitle>
+          <CardTitle className="text-xl">{t("contractFinalizedTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="rounded-2xl border border-green-200 bg-green-50 p-6">
@@ -157,11 +159,10 @@ export function RetailerSignPanel(props: {
                 <CheckCircle2 className="mt-1 h-6 w-6 text-green-600" />
                 <div>
                   <p className="text-lg font-semibold text-green-900">
-                    Contratto finalizzato con successo!
+                    {t("contractFinalizedSuccess")}
                   </p>
                   <p className="mt-2 text-sm text-slate-700">
-                    La tua firma digitale è stata acquisita e il contratto di affiliazione
-                    Lycamobile è ora attivo.
+                    {t("contractFinalizedDesc")}
                   </p>
                 </div>
               </div>
@@ -171,7 +172,7 @@ export function RetailerSignPanel(props: {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-lg border bg-white p-4 shadow-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                Contratto
+                {t("contracts")}
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-900">
                 #{props.initial.contractId}
@@ -180,16 +181,16 @@ export function RetailerSignPanel(props: {
 
             <div className="rounded-lg border bg-white p-4 shadow-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                Stato
+                {t("status")}
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-900">
-                {props.initial.status || "Attivo"}
+                {props.initial.status || t("active")}
               </p>
             </div>
 
             <div className="rounded-lg border bg-white p-4 shadow-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                Azienda
+                {t("company")}
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-900">
                 {props.initial.companyName}
@@ -198,7 +199,7 @@ export function RetailerSignPanel(props: {
 
             <div className="rounded-lg border bg-white p-4 shadow-sm">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                Referente
+                {t("contactFirstName")}
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-900">
                 {props.initial.contactFirstName} {props.initial.contactLastName}
@@ -207,18 +208,18 @@ export function RetailerSignPanel(props: {
 
             <div className="rounded-lg border bg-white p-4 shadow-sm sm:col-span-2">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                Verifica OTP
+                {t("otpVerification")}
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-900">
                 {otpVerifiedAt
-                  ? new Date(otpVerifiedAt).toLocaleString("it-IT", {
+                  ? new Date(otpVerifiedAt).toLocaleString(language === "en" ? "en-GB" : "it-IT", {
                       day: "2-digit",
                       month: "2-digit",
                       year: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
                     })
-                  : "Completata"}
+                  : t("completed")}
               </p>
             </div>
           </div>
@@ -231,15 +232,15 @@ export function RetailerSignPanel(props: {
     <Card className="border-2 shadow-lg">
       <CardHeader className="border-b bg-muted/30">
         <CardTitle className="text-xl">
-          {step === 2 ? "Verifica Identità OTP" : "Consenso e Firma Digitale"}
+          {step === 2 ? t("identityVerification") : t("consentAndSignature")}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
         <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="mb-4 flex flex-row flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-900">
-            <span className={cn(step === 1 ? "text-slate-900" : "text-slate-500")}>Firma</span>
-            <span className={cn(step === 2 ? "text-slate-900" : "text-slate-500")}>OTP</span>
-            <span className={cn(step === 3 ? "text-slate-900" : "text-slate-500")}>Completato</span>
+            <span className={cn(step === 1 ? "text-slate-900" : "text-slate-500")}>{t("signature")}</span>
+            <span className={cn(step === 2 ? "text-slate-900" : "text-slate-500")}>{t("otp")}</span>
+            <span className={cn(step === 3 ? "text-slate-900" : "text-slate-500")}>{t("done")}</span>
           </div>
           <div className="mb-3">
             <Progress value={progressValue} className="h-2" />
@@ -250,8 +251,8 @@ export function RetailerSignPanel(props: {
           <div className={step === 1 ? "flex flex-col gap-6" : "hidden"}>
             <SignaturePad
               ref={retailerRef}
-              label="Firma"
-              description="Disegna la tua firma nel riquadro."
+              label={t("signature")}
+              description={t("retailerSignatureDesc")}
             />
 
             <label className="flex items-start gap-3 rounded-lg border-2 border-brand-blue/10 bg-brand-blue/5 p-4 text-sm transition-colors hover:bg-brand-blue/10">
@@ -262,8 +263,7 @@ export function RetailerSignPanel(props: {
                 onChange={(e) => setAck(e.target.checked)}
               />
               <span className="leading-relaxed font-medium text-brand-navy">
-                Confermo di aver letto, compreso e accettato tutte le disposizioni del
-                Contratto.
+                {t("termsAcceptance")}
               </span>
             </label>
 
@@ -275,8 +275,7 @@ export function RetailerSignPanel(props: {
                 onChange={(e) => setGdpr(e.target.checked)}
               />
               <span className="leading-relaxed font-medium text-brand-navy">
-                Acconsento al trattamento dei dati personali ai sensi del Regolamento (UE)
-                2016/679 (GDPR) per le finalità connesse alla gestione del contratto.
+                {t("gdprConsent")}
               </span>
             </label>
 
@@ -287,7 +286,7 @@ export function RetailerSignPanel(props: {
                 className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8"
               >
                 {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                Invia OTP
+                {t("sendOtp")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -295,9 +294,9 @@ export function RetailerSignPanel(props: {
 
           <div className={step === 2 ? "flex flex-col gap-6" : "hidden"}>
             <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="text-sm font-semibold text-brand-navy">Verifica Identità OTP</div>
+              <div className="text-sm font-semibold text-brand-navy">{t("identityVerification")}</div>
               <div className="mt-1 text-sm text-slate-600">
-                Inserisci il codice ricevuto via email per finalizzare.
+                {t("enterOtpDesc")}
               </div>
               <div className="mt-4 flex justify-center">
                 <InputOTP
@@ -322,7 +321,7 @@ export function RetailerSignPanel(props: {
 
               <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
                 <Button variant="outline" onClick={onResendOtp} disabled={pending} className="w-full sm:w-auto">
-                  Reinvia OTP
+                  {t("resendOtp")}
                 </Button>
                 <Button
                   onClick={onVerifyOtp}
@@ -330,7 +329,7 @@ export function RetailerSignPanel(props: {
                   className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8"
                 >
                   {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                  Verifica OTP
+                  {t("verifyOtp")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -341,7 +340,7 @@ export function RetailerSignPanel(props: {
             <div className="rounded-lg border bg-green-50 p-4 text-green-800 flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               <span className="text-sm font-medium">
-                Grazie, la firma e la verifica OTP sono state completate.
+                {t("thanksSignatureCompleted")}
               </span>
             </div>
           </div>

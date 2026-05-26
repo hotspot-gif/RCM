@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select"
 import { BRANCHES, ZONES_BY_BRANCH, type Branch } from "@/lib/branches"
 import { createContractAction, updateContractAction } from "@/app/dashboard/contracts/actions"
+import { useI18n } from "@/lib/i18n/i18n-context"
 import type { AppUser, Contract } from "@/lib/types"
 
 const initial = {
@@ -71,6 +72,7 @@ export function NewContractForm({
   >>
 }) {
   const router = useRouter()
+  const { t } = useI18n()
   const rsmBranches = BRANCHES.filter((b) => (currentUser.branches ?? []).includes(b))
   const allowedBranches = currentUser.role === "RSM" ? rsmBranches : BRANCHES
   const defaultBranch =
@@ -110,7 +112,7 @@ export function NewContractForm({
   function submit(e: FormEvent) {
     e.preventDefault()
     if (currentUser.role === "RSM" && allowedBranches.length === 0) {
-      toast.error("No branches assigned to this RSM user.")
+      toast.error(t("noBranchesAssigned"))
       return
     }
 
@@ -119,22 +121,22 @@ export function NewContractForm({
     const postCodeClean = values.post_code.replace(/\D/g, "")
 
     if (mobileClean.length !== 10) {
-      toast.error("Mobile number must be exactly 10 digits")
+      toast.error(t("mobileDigitsError"))
       return
     }
     if (landlineClean && landlineClean.length !== 10) {
-      toast.error("Landline number must be exactly 10 digits")
+      toast.error(t("landlineDigitsError"))
       return
     }
     if (postCodeClean.length !== 5) {
-      toast.error("Post code must be exactly 5 digits")
+      toast.error(t("postCodeDigitsError"))
       return
     }
 
     const email = values.email.trim()
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address")
+      toast.error(t("validEmailError"))
       return
     }
 
@@ -158,7 +160,7 @@ export function NewContractForm({
 
       if (mode === "edit") {
         if (!contractId) {
-          toast.error("Missing contract id")
+          toast.error(t("missingContractId"))
           return
         }
         const res = await updateContractAction({ id: contractId, ...payload })
@@ -166,7 +168,7 @@ export function NewContractForm({
           toast.error(res.error)
           return
         }
-        toast.success("Contract updated")
+        toast.success(t("contractUpdated"))
         router.push(`/dashboard/contracts/${contractId}`)
         router.refresh()
         return
@@ -177,7 +179,7 @@ export function NewContractForm({
         toast.error(res.error)
         return
       }
-      toast.success("Contract created")
+      toast.success(t("contractCreated"))
       router.push(`/dashboard/contracts/${res.data!.id}`)
     })
   }
@@ -185,7 +187,7 @@ export function NewContractForm({
   return (
     <form onSubmit={submit} className="flex flex-col gap-6">
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Field label="Company name" required>
+        <Field label={t("companyName")} required>
           <Input
             value={values.company_name}
             onChange={(e) => {
@@ -199,7 +201,7 @@ export function NewContractForm({
             required
           />
         </Field>
-        <Field label="VAT number" required>
+        <Field label={t("vatNumberLabel")} required>
           <Input
             type="tel"
             inputMode="numeric"
@@ -208,25 +210,25 @@ export function NewContractForm({
               const v = e.target.value.replace(/\D/g, "").slice(0, 11)
               update("vat_number", v)
             }}
-            placeholder="P.IVA (max 11 digits)"
+            placeholder={t("vatNumberPlaceholder")}
             required
           />
         </Field>
-        <Field label="Contact first name" required>
+        <Field label={t("contactFirstName")} required>
           <Input
             value={values.contact_first_name}
             onChange={(e) => update("contact_first_name", e.target.value)}
             required
           />
         </Field>
-        <Field label="Contact last name" required>
+        <Field label={t("contactLastName")} required>
           <Input
             value={values.contact_last_name}
             onChange={(e) => update("contact_last_name", e.target.value)}
             required
           />
         </Field>
-        <Field label="Shop name" required className="md:col-span-2">
+        <Field label={t("shopName")} required className="md:col-span-2">
           <Input
             value={values.shop_name}
             onChange={(e) => update("shop_name", e.target.value)}
@@ -236,71 +238,79 @@ export function NewContractForm({
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Field label="Street" required className="md:col-span-3">
+        <Field label={t("street")} required className="md:col-span-3">
           <Input
             value={values.street}
             onChange={(e) => update("street", e.target.value)}
             required
           />
         </Field>
-        <Field label="House no." required>
+        <Field label={t("houseNumber")} required>
           <Input
             value={values.house_number}
             onChange={(e) => update("house_number", e.target.value)}
             required
           />
         </Field>
-        <Field label="Post code" required>
-          <Input
-            value={values.post_code}
-            onChange={(e) => {
-              const v = e.target.value.replace(/\D/g, "").slice(0, 5)
-              update("post_code", v)
-            }}
-            placeholder="CAP"
-            required
-          />
-        </Field>
-        <Field label="City" required className="md:col-span-3">
+        <Field label={t("city")} required className="md:col-span-3">
           <Input
             value={values.city}
             onChange={(e) => update("city", e.target.value)}
             required
           />
         </Field>
+        <Field label={t("postCode")} required>
+          <Input
+            type="tel"
+            inputMode="numeric"
+            value={values.post_code}
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, "").slice(0, 5)
+              update("post_code", v)
+            }}
+            placeholder="00000"
+            required
+          />
+        </Field>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Field label="Mobile number" required>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">+39</span>
+        <Field label={t("landline")}>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              +39
+            </span>
             <Input
               type="tel"
-              value={values.mobile_number}
-              onChange={(e) => {
-                const v = e.target.value.replace(/\D/g, "").slice(0, 10)
-                update("mobile_number", v)
-              }}
-              placeholder="Mobile Number"
-              required
-            />
-          </div>
-        </Field>
-        <Field label="Landline number">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">+39</span>
-            <Input
-              type="tel"
+              inputMode="numeric"
               value={values.landline_number}
               onChange={(e) => {
                 const v = e.target.value.replace(/\D/g, "").slice(0, 10)
                 update("landline_number", v)
               }}
-              placeholder="Landline Number"
+              className="pl-12"
             />
           </div>
         </Field>
-        <Field label="Email" required className="md:col-span-2">
+        <Field label={t("mobile")} required>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              +39
+            </span>
+            <Input
+              type="tel"
+              inputMode="numeric"
+              value={values.mobile_number}
+              onChange={(e) => {
+                const v = e.target.value.replace(/\D/g, "").slice(0, 10)
+                update("mobile_number", v)
+              }}
+              className="pl-12"
+              required
+            />
+          </div>
+        </Field>
+        <Field label={t("emailLabel")} required className="md:col-span-2">
           <Input
             type="email"
             value={values.email}
@@ -311,17 +321,17 @@ export function NewContractForm({
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Field label="Branch">
+        <Field label={t("branch")} required>
           <Select
+            disabled={!canEditBranch}
             value={values.branch}
             onValueChange={(v) => {
               update("branch", v)
               update("zone", "")
             }}
-            disabled={!canEditBranch}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select branch" />
+              <SelectValue placeholder={t("selectBranch")} />
             </SelectTrigger>
             <SelectContent>
               {allowedBranches.map((b) => (
@@ -332,16 +342,14 @@ export function NewContractForm({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Zone">
+        <Field label={t("zone")} required>
           <Select
+            disabled={!canEditZone || !values.branch}
             value={values.zone}
             onValueChange={(v) => update("zone", v)}
-            disabled={!canEditZone || !values.branch}
           >
             <SelectTrigger>
-              <SelectValue
-                placeholder={values.branch ? "Select zone" : "Choose branch first"}
-              />
+              <SelectValue placeholder={t("selectZone")} />
             </SelectTrigger>
             <SelectContent>
               {zones.map((z) => (
@@ -354,13 +362,15 @@ export function NewContractForm({
         </Field>
       </section>
 
-      <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>
-          {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-          {mode === "edit" ? "Save changes" : "Create contract"}
-        </Button>
-      </div>
-    </form>
+      <Button type="submit" size="lg" disabled={pending} className="mt-4">
+        {pending ? (
+          <Spinner className="mr-2 h-4 w-4" />
+        ) : mode === "edit" ? (
+          t("saveChanges")
+        ) : (
+          t("createContract")
+        )}
+      </Button>
   )
 }
 
