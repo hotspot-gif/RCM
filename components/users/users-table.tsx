@@ -38,12 +38,41 @@ import {
   resetUserPasswordToTemporaryAction 
 } from "@/app/dashboard/users/actions"
 import { EditUserDialog } from "./edit-user-dialog"
+import { BRANCHES } from "@/lib/branches"
 
 export function UsersTable({ users }: { users: AppUser[] }) {
   const [editing, setEditing] = useState<AppUser | null>(null)
   const [tempPasswordData, setTempPasswordData] = useState<{ password: string; user: AppUser } | null>(null)
   const [pending, startTransition] = useTransition()
   const [copied, setCopied] = useState(false)
+
+  const SOUTH_BRANCHES = ["LMIT-HS-BARI", "LMIT-HS-NAPLES", "LMIT-HS-PALERMO", "LMIT-HS-ROME"]
+  const NORTH_BRANCHES = ["LMIT-HS-BOLOGNA", "LMIT-HS-MILAN", "LMIT-HS-PADOVA", "LMIT-HS-TORINO"]
+
+  function formatAssignments(u: AppUser) {
+    if (u.role === "ADMIN") return "SYSTEM"
+    
+    const userBranches = u.branches || (u.branch ? [u.branch] : [])
+    if (userBranches.length === 0) return "UNASSIGNED"
+
+    // Check for ITALY (All branches)
+    if (userBranches.length === BRANCHES.length) {
+      const allIncluded = BRANCHES.every(b => userBranches.includes(b))
+      if (allIncluded) return "ITALY"
+    }
+
+    // Check for SOUTH REGION
+    const hasAllSouth = SOUTH_BRANCHES.every(b => userBranches.includes(b))
+    const onlySouth = userBranches.every(b => SOUTH_BRANCHES.includes(b))
+    if (hasAllSouth && onlySouth) return "SOUTH REGION"
+
+    // Check for NORTH REGION
+    const hasAllNorth = NORTH_BRANCHES.every(b => userBranches.includes(b))
+    const onlyNorth = userBranches.every(b => NORTH_BRANCHES.includes(b))
+    if (hasAllNorth && onlyNorth) return "NORTH REGION"
+
+    return userBranches.join(", ")
+  }
 
   function onDelete(user: AppUser) {
     if (!confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) return
@@ -156,17 +185,31 @@ export function UsersTable({ users }: { users: AppUser[] }) {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-1.5 text-sm text-brand-navy font-medium">
                     <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    {u.role === "RSM"
-                      ? (u.branches && u.branches.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {u.branches.map(b => (
-                              <span key={b} className="bg-brand-navy/5 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold border border-brand-navy/10">
-                                {b}
-                              </span>
-                            ))}
-                          </div>
-                        ) : "Unassigned")
-                      : (u.branch ?? "Unassigned")}
+                    {(() => {
+                      const formatted = formatAssignments(u)
+                      const isGrouped = ["ITALY", "NORTH REGION", "SOUTH REGION"].includes(formatted)
+                      
+                      if (isGrouped) {
+                        return (
+                          <span className="bg-brand-navy text-white px-2 py-0.5 rounded text-[10px] uppercase font-black border border-brand-navy/10 shadow-sm">
+                            {formatted}
+                          </span>
+                        )
+                      }
+                      
+                      const branches = u.branches || (u.branch ? [u.branch] : [])
+                      if (branches.length === 0) return <span className="text-muted-foreground italic">Unassigned</span>
+                      
+                      return (
+                        <div className="flex flex-wrap gap-1">
+                          {branches.map(b => (
+                            <span key={b} className="bg-brand-navy/5 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold border border-brand-navy/10">
+                              {b}
+                            </span>
+                          ))}
+                        </div>
+                      )
+                    })()}
                   </div>
                   {u.zone && (
                     <span className="text-[10px] uppercase font-bold text-muted-foreground ml-5">
