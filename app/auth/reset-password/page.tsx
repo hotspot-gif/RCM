@@ -68,22 +68,13 @@ export default function ResetPasswordPage() {
           }
         }
 
-        // 2. If Implicit flow, the hash is handled by the client automatically,
-        // but we can try to force it if needed.
+        // 2. If Implicit flow, the hash is handled by the client automatically.
+        // We can check if a session was established after a short delay or via onAuthStateChange.
         if (window.location.hash) {
-          console.log("Parsing session from hash...")
-          const { data: hashData, error: hashError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
-          if (hashError) {
-            console.warn("Hash parsing error:", hashError)
-          }
-          if (hashData?.session) {
-            console.log("Session established via hash")
-            if (mounted) {
-              setHasSession(true)
-              setReady(true)
-            }
-            return
-          }
+          console.log("Detected hash in URL, waiting for client to process...")
+          // The browser client handles hash fragments automatically on initialization.
+          // We'll give it a moment and then check getSession.
+          await new Promise(resolve => setTimeout(resolve, 500))
         }
 
         // 3. Fallback: check if we already have a session
