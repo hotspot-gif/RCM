@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useI18n } from "@/lib/i18n/i18n-context"
 import type { Contract } from "@/lib/types"
 import { deleteContractAction } from "@/app/dashboard/contracts/actions"
 
@@ -45,6 +46,7 @@ type Row = Pick<
 >
 
 export function ContractsTable({ contracts }: { contracts: Row[] }) {
+  const { t, language } = useI18n()
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<string>("ALL")
   const [pending, startTransition] = useTransition()
@@ -64,12 +66,12 @@ export function ContractsTable({ contracts }: { contracts: Row[] }) {
   }, [contracts, query, status])
 
   function onDelete(row: Row) {
-    if (!confirm(`Delete contract for ${row.company_name}? This cannot be undone.`))
+    if (!confirm(t("confirmDelete").replace("{name}", row.company_name)))
       return
     startTransition(async () => {
       const res = await deleteContractAction(row.id)
-      if (!res.ok) toast.error(res.error)
-      else toast.success("Contract deleted")
+      if (!res.ok) toast.error(t("deleteError"))
+      else toast.success(t("deleteSuccess"))
     })
   }
 
@@ -84,7 +86,7 @@ export function ContractsTable({ contracts }: { contracts: Row[] }) {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search company, shop, city, email"
+            placeholder={t("searchPlaceholder")}
             className="pl-9"
           />
         </div>
@@ -93,30 +95,30 @@ export function ContractsTable({ contracts }: { contracts: Row[] }) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All statuses</SelectItem>
-            <SelectItem value="GENERATED">Generated</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="SIGNED">Signed</SelectItem>
+            <SelectItem value="ALL">{t("allStatuses")}</SelectItem>
+            <SelectItem value="GENERATED">{t("generated")}</SelectItem>
+            <SelectItem value="PENDING">{t("pendingContracts")}</SelectItem>
+            <SelectItem value="SIGNED">{t("signedContracts")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-12 text-center">
-          <p className="text-sm text-muted-foreground">No contracts match your filters.</p>
+          <p className="text-sm text-muted-foreground">{t("noContractsFound")}</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Company</TableHead>
-                <TableHead>Shop</TableHead>
-                <TableHead>City</TableHead>
-                <TableHead>Zone</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-12" aria-label="Actions" />
+                <TableHead>{t("company")}</TableHead>
+                <TableHead>{t("shop")}</TableHead>
+                <TableHead>{t("city")}</TableHead>
+                <TableHead>{t("zone")}</TableHead>
+                <TableHead>{t("created")}</TableHead>
+                <TableHead>{t("status")}</TableHead>
+                <TableHead className="w-12" aria-label={t("actions")} />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -134,15 +136,15 @@ export function ContractsTable({ contracts }: { contracts: Row[] }) {
                   <TableCell className="text-muted-foreground">{c.city}</TableCell>
                   <TableCell className="text-muted-foreground">{c.zone ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(c.created_at).toLocaleDateString("en-GB")}
+                    {new Date(c.created_at).toLocaleDateString(language === "en" ? "en-GB" : "it-IT")}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={c.status} />
+                    <StatusBadge status={c.status} t={t} />
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label="Row actions">
+                        <Button variant="ghost" size="icon" aria-label={t("actions")}>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -150,7 +152,7 @@ export function ContractsTable({ contracts }: { contracts: Row[] }) {
                         <DropdownMenuItem asChild>
                           <Link href={`/dashboard/contracts/${c.id}`}>
                             <ExternalLink className="mr-2 h-4 w-4" />
-                            Open
+                            {t("open")}
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -159,7 +161,7 @@ export function ContractsTable({ contracts }: { contracts: Row[] }) {
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {t("delete")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -174,14 +176,14 @@ export function ContractsTable({ contracts }: { contracts: Row[] }) {
   )
 }
 
-function StatusBadge({ status }: { status: Contract["status"] }) {
+function StatusBadge({ status, t }: { status: Contract["status"]; t: any }) {
   if (status === "SIGNED")
     return (
-      <Badge className="bg-[#08dc7d] text-[#21264e] hover:bg-[#08dc7d]">Signed</Badge>
+      <Badge className="bg-[#08dc7d] text-[#21264e] hover:bg-[#08dc7d]">{t("signedContracts")}</Badge>
     )
   if (status === "PENDING")
     return (
-      <Badge className="bg-[#ffc8b2] text-[#21264e] hover:bg-[#ffc8b2]">Pending</Badge>
+      <Badge className="bg-[#ffc8b2] text-[#21264e] hover:bg-[#ffc8b2]">{t("pendingContracts")}</Badge>
     )
-  return <Badge variant="secondary">Generated</Badge>
+  return <Badge variant="secondary">{t("generated")}</Badge>
 }

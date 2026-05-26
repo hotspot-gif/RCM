@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
+import { I18nProvider } from "@/lib/i18n/i18n-context"
 import "./globals.css"
 
 const inter = Inter({
@@ -34,9 +35,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable} bg-background`}>
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
-        <Toaster richColors position="top-right" />
-        {process.env.NODE_ENV === "production" && <Analytics />}
+        <I18nProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+          {process.env.NODE_ENV === "production" && <Analytics />}
+        </I18nProvider>
       </body>
     </html>
   )

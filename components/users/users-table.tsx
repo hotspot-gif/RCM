@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Spinner } from "@/components/ui/spinner"
+import { useI18n } from "@/lib/i18n/i18n-context"
 import type { AppUser } from "@/lib/types"
 import { 
   deleteUserAction, 
@@ -41,6 +42,7 @@ import { EditUserDialog } from "./edit-user-dialog"
 import { BRANCHES } from "@/lib/branches"
 
 export function UsersTable({ users }: { users: AppUser[] }) {
+  const { t } = useI18n()
   const [editing, setEditing] = useState<AppUser | null>(null)
   const [tempPasswordData, setTempPasswordData] = useState<{ password: string; user: AppUser } | null>(null)
   const [pending, startTransition] = useTransition()
@@ -50,36 +52,36 @@ export function UsersTable({ users }: { users: AppUser[] }) {
   const NORTH_BRANCHES = ["LMIT-HS-BOLOGNA", "LMIT-HS-MILAN", "LMIT-HS-PADOVA", "LMIT-HS-TORINO"]
 
   function formatAssignments(u: AppUser) {
-    if (u.role === "ADMIN") return "ITALY"
+    if (u.role === "ADMIN") return t("italy")
     
     const userBranches = u.branches || (u.branch ? [u.branch] : [])
-    if (userBranches.length === 0) return "UNASSIGNED"
+    if (userBranches.length === 0) return t("unassigned")
 
     // Check for ITALY (All branches)
     if (userBranches.length === BRANCHES.length) {
       const allIncluded = BRANCHES.every(b => userBranches.includes(b))
-      if (allIncluded) return "ITALY"
+      if (allIncluded) return t("italy")
     }
 
     // Check for SOUTH REGION
     const hasAllSouth = SOUTH_BRANCHES.every(b => userBranches.includes(b))
     const onlySouth = userBranches.every(b => SOUTH_BRANCHES.includes(b))
-    if (hasAllSouth && onlySouth) return "SOUTH REGION"
+    if (hasAllSouth && onlySouth) return t("southRegion")
 
     // Check for NORTH REGION
     const hasAllNorth = NORTH_BRANCHES.every(b => userBranches.includes(b))
     const onlyNorth = userBranches.every(b => NORTH_BRANCHES.includes(b))
-    if (hasAllNorth && onlyNorth) return "NORTH REGION"
+    if (hasAllNorth && onlyNorth) return t("northRegion")
 
     return userBranches.join(", ")
   }
 
   function onDelete(user: AppUser) {
-    if (!confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) return
+    if (!confirm(t("confirmDeleteUser").replace("{name}", user.full_name))) return
     startTransition(async () => {
       const res = await deleteUserAction(user.id)
       if (!res.ok) toast.error(res.error)
-      else toast.success("User deleted successfully")
+      else toast.success(t("userDeleted"))
     })
   }
 
@@ -87,7 +89,7 @@ export function UsersTable({ users }: { users: AppUser[] }) {
     startTransition(async () => {
       const res = await sendUserPasswordResetEmailAction({ email: user.email })
       if (!res.ok) toast.error(res.error)
-      else toast.success(`Reset link sent to ${user.email}`)
+      else toast.success(t("resetLinkSent").replace("{email}", user.email))
     })
   }
 
@@ -97,7 +99,7 @@ export function UsersTable({ users }: { users: AppUser[] }) {
       if (!res.ok) toast.error(res.error)
       else {
         setTempPasswordData({ password: res.data, user })
-        toast.success(`Temporary password generated for ${user.full_name}`)
+        toast.success(t("tempPasswordGenerated").replace("{name}", user.full_name))
       }
     })
   }
@@ -106,7 +108,7 @@ export function UsersTable({ users }: { users: AppUser[] }) {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-    toast.success("Copied to clipboard")
+    toast.success(t("copiedToClipboard"))
   }
 
   function getInitials(name: string) {
@@ -124,7 +126,7 @@ export function UsersTable({ users }: { users: AppUser[] }) {
         <div className="bg-muted/30 p-4 rounded-full mb-4">
           <Mail className="h-8 w-8 text-muted-foreground" />
         </div>
-        <p className="text-lg font-medium text-brand-navy">No staff members found</p>
+        <p className="text-lg font-medium text-brand-navy">{t("noStaffFound")}</p>
         <p className="text-sm text-muted-foreground mt-1">
           Start by adding a new user to the system.
         </p>
@@ -137,11 +139,11 @@ export function UsersTable({ users }: { users: AppUser[] }) {
       <Table>
         <TableHeader className="bg-muted/30">
           <TableRow className="hover:bg-transparent">
-            <TableHead className="w-[300px] font-semibold text-brand-navy">Staff Member</TableHead>
-            <TableHead className="font-semibold text-brand-navy">Role & Access</TableHead>
-            <TableHead className="font-semibold text-brand-navy">Assignments</TableHead>
-            <TableHead className="font-semibold text-brand-navy">Account Status</TableHead>
-            <TableHead className="w-[100px] text-right font-semibold text-brand-navy pr-6">Actions</TableHead>
+            <TableHead className="w-[300px] font-semibold text-brand-navy">{t("staffMember")}</TableHead>
+            <TableHead className="font-semibold text-brand-navy">{t("roleAndAccess")}</TableHead>
+            <TableHead className="font-semibold text-brand-navy">{t("assignments")}</TableHead>
+            <TableHead className="font-semibold text-brand-navy">{t("accountStatus")}</TableHead>
+            <TableHead className="w-[100px] text-right font-semibold text-brand-navy pr-6">{t("actions")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -164,21 +166,21 @@ export function UsersTable({ users }: { users: AppUser[] }) {
               </TableCell>
               <TableCell>
                 <div className="flex flex-col gap-1.5 items-start">
-                  <Badge
-                    variant="secondary"
-                    className={
-                      u.role === "ADMIN"
-                        ? "bg-blue-600 text-white hover:bg-blue-700 px-2 py-0 border-none"
-                        : u.role === "RSM"
-                          ? "bg-brand-navy text-white hover:bg-brand-navy/90 px-2 py-0 border-none"
-                        : u.role === "ASM"
-                          ? "bg-orange-100 text-orange-700 hover:bg-orange-200 px-2 py-0 border-none font-semibold"
-                          : "bg-muted text-muted-foreground px-2 py-0 border-none"
-                    }
-                  >
-                    <Shield className="h-3 w-3 mr-1" />
-                    {u.role}
-                  </Badge>
+                    <Badge
+                      variant="secondary"
+                      className={
+                        u.role === "ADMIN"
+                          ? "bg-blue-600 text-white hover:bg-blue-700 px-2 py-0 border-none"
+                          : u.role === "RSM"
+                            ? "bg-brand-navy text-white hover:bg-brand-navy/90 px-2 py-0 border-none"
+                          : u.role === "ASM"
+                            ? "bg-orange-100 text-orange-700 hover:bg-orange-200 px-2 py-0 border-none font-semibold"
+                            : "bg-muted text-muted-foreground px-2 py-0 border-none"
+                      }
+                    >
+                      <Shield className="h-3 w-3 mr-1" />
+                      {u.role === "ADMIN" ? t("admin") : u.role === "MANAGER" ? t("manager") : t("agent")}
+                    </Badge>
                 </div>
               </TableCell>
               <TableCell>
@@ -267,44 +269,29 @@ export function UsersTable({ users }: { users: AppUser[] }) {
                         {pending ? <Spinner className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4 text-brand-navy" />}
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel className="text-xs text-muted-foreground font-semibold px-2 py-1.5 uppercase tracking-wider">Account Actions</DropdownMenuLabel>
+                    <DropdownMenuContent align="end" className="w-[200px]">
+                      <DropdownMenuLabel>{t("actions")}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => setEditing(u)} 
-                        className="cursor-pointer focus:bg-brand-navy/5 focus:text-brand-navy"
-                      >
+                      <DropdownMenuItem onClick={() => setEditing(u)} className="cursor-pointer">
                         <Pencil className="mr-2 h-4 w-4" />
-                        Modify Account Details
+                        {t("edit")}
                       </DropdownMenuItem>
-                      
-                      <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-[10px] text-muted-foreground font-bold px-2 py-1 uppercase tracking-tighter">Security & Access</DropdownMenuLabel>
-                      
-                      <DropdownMenuItem 
-                        onClick={() => onSendResetEmail(u)}
-                        className="cursor-pointer focus:bg-brand-navy/5 focus:text-brand-navy"
-                      >
+                      <DropdownMenuItem onClick={() => onSendResetEmail(u)} disabled={pending} className="cursor-pointer">
                         <Mail className="mr-2 h-4 w-4" />
-                        Email Reset Link
+                        {t("sendResetEmail")}
                       </DropdownMenuItem>
-
-                      <DropdownMenuItem 
-                        onClick={() => onSetTempPassword(u)}
-                        className="cursor-pointer focus:bg-brand-navy/5 focus:text-brand-navy"
-                      >
+                      <DropdownMenuItem onClick={() => onSetTempPassword(u)} disabled={pending} className="cursor-pointer">
                         <Key className="mr-2 h-4 w-4" />
-                        Set Temp Password
+                        {t("setTempPassword")}
                       </DropdownMenuItem>
-                      
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        disabled={pending}
                         onClick={() => onDelete(u)}
-                        className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer font-medium"
+                        disabled={pending}
+                        className="text-destructive focus:text-destructive cursor-pointer"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Remove User
+                        {t("delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
