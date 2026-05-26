@@ -9,6 +9,9 @@ import {
   PlusSquare,
   Users,
   UserCircle,
+  Languages,
+  Check,
+  ChevronUp,
 } from "lucide-react"
 import {
   Sidebar,
@@ -21,14 +24,22 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { useI18n } from "@/lib/i18n/i18n-context"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { AppUser } from "@/lib/types"
 
 export function AppSidebar({ user }: { user: AppUser }) {
   const pathname = usePathname()
   const { t, language, setLanguage } = useI18n()
+  const { state } = useSidebar()
+  const isCollapsed = state === "collapsed"
 
   const nav = [
     { href: "/dashboard", label: t("overview"), icon: LayoutDashboard, show: true },
@@ -105,25 +116,58 @@ export function AppSidebar({ user }: { user: AppUser }) {
 
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
-            <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/50 p-1">
-              <span className="pl-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {language === "en" ? "Language" : "Lingua"}
-              </span>
-              <ToggleGroup
-                type="single"
-                value={language}
-                onValueChange={(val) => val && setLanguage(val as "en" | "it")}
-                className="h-7 gap-0"
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  tooltip={language === "en" ? "Change Language" : "Cambia Lingua"}
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-data-[collapsible=icon]:mx-auto">
+                    <Languages className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="flex flex-1 flex-col gap-0.5 overflow-hidden leading-tight group-data-[collapsible=icon]:hidden">
+                    <span className="truncate text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      {language === "en" ? "Language" : "Lingua"}
+                    </span>
+                    <span className="truncate text-sm font-semibold text-sidebar-foreground">
+                      {language === "en" ? "English" : "Italiano"}
+                    </span>
+                  </div>
+                  <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                  {isCollapsed && (
+                    <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#245bc1] text-[8px] font-bold text-white shadow-sm">
+                      {language.toUpperCase()}
+                    </div>
+                  )}
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side={isCollapsed ? "right" : "top"}
+                align={isCollapsed ? "start" : "end"}
+                className="w-[200px]"
               >
-                <ToggleGroupItem value="en" className="h-6 px-2 text-[10px] data-[state=on]:bg-background">
-                  EN
-                </ToggleGroupItem>
-                <ToggleGroupItem value="it" className="h-6 px-2 text-[10px] data-[state=on]:bg-background">
-                  IT
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+                <DropdownMenuItem
+                  className="flex items-center justify-between"
+                  onClick={() => setLanguage("en")}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">🇬🇧</span> English
+                  </span>
+                  {language === "en" && <Check className="h-4 w-4" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex items-center justify-between"
+                  onClick={() => setLanguage("it")}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">🇮🇹</span> Italiano
+                  </span>
+                  {language === "it" && <Check className="h-4 w-4" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="pointer-events-none group-data-[collapsible=icon]:!p-0 group-data-[collapsible=icon]:justify-center">
