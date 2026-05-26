@@ -188,7 +188,14 @@ export function NewContractForm({
         <Field label="Company name" required>
           <Input
             value={values.company_name}
-            onChange={(e) => update("company_name", e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value
+              setValues((prev) => ({
+                ...prev,
+                company_name: val,
+                shop_name: val,
+              }))
+            }}
             required
           />
         </Field>
