@@ -14,7 +14,8 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Check, Copy, Key } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Check, Copy, Key, Mail, Pencil, Shield } from "lucide-react"
 import { UserFormFields } from "./user-form-fields"
 import {
   resetUserPasswordToTemporaryAction,
