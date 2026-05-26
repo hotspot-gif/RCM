@@ -185,6 +185,15 @@ export const translations = {
     done: "Done",
     retailerNetwork: "Lycamobile Retailer Network — Contracts",
     allRightsReserved: "All rights reserved.",
+    reviewContractDetails: "Review Contract Details",
+    reviewDetailsDesc: "Please verify the information below before proceeding to sign the contract.",
+    contractInformation: "Contract Information",
+    contractNumber: "Contract Number",
+    confirmAndProceed: "Confirm & Proceed to Sign",
+    downloadDraftPdf: "Download Draft PDF",
+    address: "Address",
+    contactPerson: "Contact Person",
+    contactNumbers: "Contact Numbers",
     
     // Auth
     login: "Login",
@@ -381,6 +390,15 @@ export const translations = {
     done: "Completato",
     retailerNetwork: "Rete Retailer Lycamobile — Contrattualistica",
     allRightsReserved: "Tutti i diritti riservati.",
+    reviewContractDetails: "Revisione Dettagli Contratto",
+    reviewDetailsDesc: "Si prega di verificare le informazioni sottostanti prima di procedere con la firma del contratto.",
+    contractInformation: "Informazioni Contratto",
+    contractNumber: "Numero Contratto",
+    confirmAndProceed: "Conferma e Procedi alla Firma",
+    downloadDraftPdf: "Scarica Bozza PDF",
+    address: "Indirizzo",
+    contactPerson: "Persona di Contatto",
+    contactNumbers: "Recapiti Telefonici",
     
     // Auth
     login: "Accedi",

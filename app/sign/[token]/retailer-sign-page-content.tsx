@@ -93,8 +93,17 @@ interface RetailerSignPageContentProps {
     Contract,
     | "id"
     | "company_name"
+    | "shop_name"
+    | "vat_number"
     | "contact_first_name"
     | "contact_last_name"
+    | "street"
+    | "house_number"
+    | "city"
+    | "post_code"
+    | "email"
+    | "mobile_number"
+    | "landline_number"
     | "status"
     | "retailer_signature_path"
     | "retailer_ack"
@@ -125,17 +134,22 @@ export function RetailerSignPageContent({ token, contract, error }: RetailerSign
   return (
     <RemoteSignShell>
       <div className="flex flex-col gap-6">
-        <div>
-          <p className="text-sm text-muted-foreground">{contract.company_name}</p>
-        </div>
-
         <RetailerSignPanel
           token={token}
           initial={{
             contractId: contract.id,
             companyName: contract.company_name,
+            shopName: contract.shop_name,
+            vatNumber: contract.vat_number,
             contactFirstName: contract.contact_first_name,
             contactLastName: contract.contact_last_name,
+            street: contract.street,
+            houseNumber: contract.house_number,
+            city: contract.city,
+            postCode: contract.post_code,
+            email: contract.email,
+            mobileNumber: contract.mobile_number,
+            landlineNumber: contract.landline_number,
             status: contract.status,
             retailerSignaturePath: contract.retailer_signature_path,
             retailerAck: contract.retailer_ack ?? null,

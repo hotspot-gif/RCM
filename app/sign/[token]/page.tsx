@@ -20,7 +20,7 @@ export default async function RetailerSignPage({
     const { data, error } = await supabase
       .from("contracts")
       .select(
-        "id, company_name, contact_first_name, contact_last_name, status, retailer_signature_path, retailer_ack, retailer_gdpr, otp_verified_at, sign_link_expires_at, sign_link_used_at",
+        "id, company_name, shop_name, vat_number, contact_first_name, contact_last_name, street, house_number, city, post_code, email, mobile_number, landline_number, status, retailer_signature_path, retailer_ack, retailer_gdpr, otp_verified_at, sign_link_expires_at, sign_link_used_at",
       )
       .eq("sign_link_hash", tokenHash)
       .maybeSingle()
@@ -33,8 +33,17 @@ export default async function RetailerSignPage({
       Contract,
       | "id"
       | "company_name"
+      | "shop_name"
+      | "vat_number"
       | "contact_first_name"
       | "contact_last_name"
+      | "street"
+      | "house_number"
+      | "city"
+      | "post_code"
+      | "email"
+      | "mobile_number"
+      | "landline_number"
       | "status"
       | "retailer_signature_path"
       | "retailer_ack"

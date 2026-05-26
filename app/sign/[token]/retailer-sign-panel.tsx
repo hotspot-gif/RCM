@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
-import { ArrowRight, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, CheckCircle2, Download, FileText, User, MapPin, Phone, Mail, Hash } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { Progress } from "@/components/ui/progress"
@@ -14,6 +14,7 @@ import {
   requestContractOtpByTokenAction,
   saveRetailerSignatureByTokenAction,
   verifyContractOtpByTokenAction,
+  getDraftContractPdfAction,
 } from "./actions"
 import { useI18n } from "@/lib/i18n/i18n-context"
 
@@ -22,8 +23,17 @@ export function RetailerSignPanel(props: {
   initial: {
     contractId: string
     companyName: string
+    shopName: string
+    vatNumber: string
     contactFirstName: string
     contactLastName: string
+    street: string
+    houseNumber: string
+    city: string
+    postCode: string
+    email: string
+    mobileNumber: string
+    landlineNumber: string | null
     status: string
     retailerSignaturePath: string | null
     retailerAck: boolean | null
@@ -36,10 +46,11 @@ export function RetailerSignPanel(props: {
   const { t, language } = useI18n()
   const retailerRef = useRef<SignaturePadHandle>(null)
   const [pending, startTransition] = useTransition()
+  const [pendingDraft, startDraft] = useTransition()
   const [ack, setAck] = useState(!!props.initial.retailerAck)
   const [gdpr, setGdpr] = useState(!!props.initial.retailerGdpr)
-  const [step, setStep] = useState<1 | 2 | 3>(() =>
-    props.initial.otpVerifiedAt ? 3 : 1,
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(() =>
+    props.initial.otpVerifiedAt ? 3 : 0,
   )
   const [otp, setOtp] = useState("")
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null)
@@ -57,7 +68,7 @@ export function RetailerSignPanel(props: {
     !!props.initial.signLinkUsedAt ||
     (props.initial.retailerSignaturePath && otpVerifiedAt)
 
-  const progressValue = step === 1 ? 33 : step === 2 ? 66 : 100
+  const progressValue = step === 0 ? 0 : step === 1 ? 33 : step === 2 ? 66 : 100
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -130,6 +141,26 @@ export function RetailerSignPanel(props: {
       setOtp("")
       setOtpSentTo(res.data!.sentTo)
       toast.success(t("otpResentSuccess").replace("{email}", res.data!.sentTo))
+    })
+  }
+
+  function onDownloadDraft() {
+    startDraft(async () => {
+      const res = await getDraftContractPdfAction(props.token)
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+      const blob = new Blob([Buffer.from(res.data!, "base64")], {
+        type: "application/pdf",
+      })
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = objectUrl
+      a.download = `Draft_Contract_${props.initial.companyName}.pdf`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000)
+      toast.success(t("draftPdfGenerated"))
     })
   }
 
@@ -232,22 +263,99 @@ export function RetailerSignPanel(props: {
     <Card className="border-2 shadow-lg">
       <CardHeader className="border-b bg-muted/30">
         <CardTitle className="text-xl">
-          {step === 2 ? t("identityVerification") : t("consentAndSignature")}
+          {step === 0
+            ? t("reviewContractDetails")
+            : step === 2
+              ? t("identityVerification")
+              : t("consentAndSignature")}
         </CardTitle>
+        {step === 0 && (
+          <CardDescription>
+            {t("reviewDetailsDesc")}
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent className="pt-6">
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="mb-4 flex flex-row flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-900">
-            <span className={cn(step === 1 ? "text-slate-900" : "text-slate-500")}>{t("signature")}</span>
-            <span className={cn(step === 2 ? "text-slate-900" : "text-slate-500")}>{t("otp")}</span>
-            <span className={cn(step === 3 ? "text-slate-900" : "text-slate-500")}>{t("done")}</span>
+        {step !== 0 && (
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mb-4 flex flex-row flex-wrap items-center justify-between gap-3 text-sm font-semibold text-slate-900">
+              <span className={cn(step === 1 ? "text-slate-900" : "text-slate-500")}>{t("signature")}</span>
+              <span className={cn(step === 2 ? "text-slate-900" : "text-slate-500")}>{t("otp")}</span>
+              <span className={cn(step === 3 ? "text-slate-900" : "text-slate-500")}>{t("done")}</span>
+            </div>
+            <div className="mb-3">
+              <Progress value={progressValue} className="h-2" />
+            </div>
           </div>
-          <div className="mb-3">
-            <Progress value={progressValue} className="h-2" />
-          </div>
-        </div>
+        )}
 
         <div className="flex flex-col gap-6">
+          <div className={step === 0 ? "flex flex-col gap-6" : "hidden"}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <InfoRow
+                icon={Hash}
+                label={t("contractNumber")}
+                value={`#${props.initial.contractId}`}
+              />
+              <InfoRow
+                icon={User}
+                label={t("companyName")}
+                value={props.initial.companyName}
+              />
+              <InfoRow
+                icon={FileText}
+                label={t("shopName")}
+                value={props.initial.shopName}
+              />
+              <InfoRow
+                icon={Hash}
+                label={t("vatNumberLabel")}
+                value={props.initial.vatNumber}
+              />
+              <InfoRow
+                icon={User}
+                label={t("contactPerson")}
+                value={`${props.initial.contactFirstName} ${props.initial.contactLastName}`}
+              />
+              <InfoRow
+                icon={Mail}
+                label={t("emailLabel")}
+                value={props.initial.email}
+              />
+              <InfoRow
+                icon={MapPin}
+                label={t("address")}
+                value={`${props.initial.street} ${props.initial.houseNumber}, ${props.initial.postCode} ${props.initial.city}`}
+                className="sm:col-span-2"
+              />
+              <InfoRow
+                icon={Phone}
+                label={t("contactNumbers")}
+                value={`${props.initial.mobileNumber}${props.initial.landlineNumber ? ` / ${props.initial.landlineNumber}` : ""}`}
+                className="sm:col-span-2"
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <Button
+                variant="outline"
+                onClick={onDownloadDraft}
+                disabled={pendingDraft}
+                className="w-full sm:w-auto"
+              >
+                {pendingDraft ? <Spinner className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
+                {t("downloadDraftPdf")}
+              </Button>
+              <Button
+                onClick={() => setStep(1)}
+                className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8"
+              >
+                {t("confirmAndProceed")}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
           <div className={step === 1 ? "flex flex-col gap-6" : "hidden"}>
             <SignaturePad
               ref={retailerRef}
@@ -347,6 +455,34 @@ export function RetailerSignPanel(props: {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+  className,
+}: {
+  icon: any
+  label: string
+  value: string
+  className?: string
+}) {
+  return (
+    <div className={cn("flex items-start gap-3 rounded-lg border bg-white p-3 shadow-sm", className)}>
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-0.5 truncate text-sm font-semibold text-brand-navy">
+          {value}
+        </p>
+      </div>
+    </div>
   )
 }
 
