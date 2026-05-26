@@ -371,6 +371,7 @@ export function NewContractForm({
           t("createContract")
         )}
       </Button>
+    </form>
   )
 }
 
