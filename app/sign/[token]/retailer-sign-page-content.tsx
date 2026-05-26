@@ -28,14 +28,14 @@ function RemoteSignShell({ children }: { children: React.ReactNode }) {
                 alt="Universal Service Logo"
                 width={160}
                 height={45}
-                className="h-9 w-auto object-contain"
+                className="h-7 w-auto object-contain sm:h-9"
                 priority
               />
             </div>
-            <div className="flex-none h-10 w-px bg-white/25 hidden sm:block" />
-            <div className="min-w-0 text-sm text-white/90 hidden sm:block">
+            <div className="flex-none h-8 w-px bg-white/25 sm:h-10" />
+            <div className="min-w-0 text-[10px] text-white/90 sm:text-sm">
               <p className="font-semibold text-white">Universal Service 2006 SRL</p>
-              <p>{t("retailerNetwork")}</p>
+              <p className="truncate">{t("retailerNetwork")}</p>
             </div>
           </div>
 
