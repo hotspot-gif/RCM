@@ -14,8 +14,13 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Check, Copy, Key } from "lucide-react"
 import { UserFormFields } from "./user-form-fields"
-import { sendUserPasswordResetEmailAction, updateUserAction } from "@/app/dashboard/users/actions"
+import {
+  resetUserPasswordToTemporaryAction,
+  sendUserPasswordResetEmailAction,
+  updateUserAction,
+} from "@/app/dashboard/users/actions"
 import type { AppUser } from "@/lib/types"
 
 export function EditUserDialog({
@@ -37,9 +42,13 @@ export function EditUserDialog({
     is_active: true,
   })
   const [pending, startTransition] = useTransition()
+  const [tempPassword, setTempPassword] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (user) {
+      setTempPassword(null)
+      setCopied(false)
       setValues({
         full_name: user.full_name,
         email: user.email,
@@ -91,6 +100,27 @@ export function EditUserDialog({
     })
   }
 
+  function resetToTempPassword() {
+    if (!user) return
+    startTransition(async () => {
+      const res = await resetUserPasswordToTemporaryAction(user.id)
+      if (!res.ok) {
+        toast.error(res.error)
+        return
+      }
+      setTempPassword(res.data)
+      toast.success("Password has been reset")
+    })
+  }
+
+  function copyToClipboard() {
+    if (!tempPassword) return
+    navigator.clipboard.writeText(tempPassword)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+    toast.success("Password copied to clipboard")
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -124,22 +154,61 @@ export function EditUserDialog({
             />
           </div>
 
-          <div className="mt-4 flex items-center justify-between rounded-lg border p-3">
-            <div className="flex flex-col">
-              <Label className="text-sm font-medium">Reset password</Label>
-              <span className="text-xs text-muted-foreground">
-                Sends a password reset email to the user.
-              </span>
+          <div className="mt-4 flex flex-col gap-4 rounded-lg border p-4 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                <Label className="text-sm font-medium">Account Security</Label>
+                <span className="text-xs text-muted-foreground">
+                  Reset user password if they cannot sign in.
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={sendPasswordResetEmail}
+                  disabled={pending}
+                >
+                  {pending ? <Spinner className="mr-2 h-3 w-3" /> : null}
+                  Send Email Link
+                </Button>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  onClick={resetToTempPassword}
+                  disabled={pending}
+                  className="bg-brand-navy hover:bg-brand-navy/90"
+                >
+                  {pending ? <Spinner className="mr-2 h-3 w-3" /> : <Key className="mr-2 h-3 w-3" />}
+                  Set Temp Password
+                </Button>
+              </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={sendPasswordResetEmail}
-              disabled={pending}
-            >
-              {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-              Send reset email
-            </Button>
+
+            {tempPassword && (
+              <div className="flex flex-col gap-2 rounded-md bg-white p-3 border border-brand-navy/20 animate-in fade-in slide-in-from-top-2">
+                <p className="text-xs font-semibold text-brand-navy uppercase tracking-wider">Temporary Password</p>
+                <div className="flex items-center justify-between gap-2">
+                  <code className="flex-1 rounded bg-muted px-2 py-1 text-lg font-mono font-bold text-brand-navy">
+                    {tempPassword}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={copyToClipboard}
+                    className="h-9 w-9 text-brand-navy"
+                  >
+                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  Copy this password and give it to the user. They should change it after logging in.
+                </p>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="mt-6">

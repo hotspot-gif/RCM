@@ -4,11 +4,32 @@ import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
 import { createClient as createPlainClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase/env"
 import type { Role } from "@/lib/branches"
 import { requireAdmin } from "@/lib/auth"
 
-export type ActionResult = { ok: true } | { ok: false; error: string }
+export type ActionResult = { ok: true; data?: any } | { ok: false; error: string }
+
+export async function resetUserPasswordToTemporaryAction(id: string): Promise<ActionResult> {
+  try {
+    await requireAdmin()
+    
+    // Generate a simple temporary password
+    const tempPassword = Math.random().toString(36).slice(-8) + "!" + Math.floor(Math.random() * 100)
+    
+    const admin = createAdminClient()
+    const { error } = await admin.auth.admin.updateUserById(id, {
+      password: tempPassword
+    })
+
+    if (error) return { ok: false, error: error.message }
+    
+    return { ok: true, data: tempPassword }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
 
 export async function createUserAction(input: {
   email: string
