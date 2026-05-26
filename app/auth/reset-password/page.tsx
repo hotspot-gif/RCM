@@ -18,19 +18,78 @@ export default function ResetPasswordPage() {
   const [formData, setFormData] = useState({ password: "", confirmPassword: "" })
 
   useEffect(() => {
-    const initSession = async () => {
-      const supabase = createClient()
-      const { data: urlData, error: urlError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
-      if (urlError) {
-        console.warn("Unable to parse Supabase reset session from URL:", urlError)
-      }
+    let mounted = true
 
-      const session = urlData?.session ?? (await supabase.auth.getSession()).data.session
-      setHasSession(!!session)
-      setReady(true)
+    const initSession = async () => {
+      try {
+        const supabase = createClient()
+        
+        // Try to get session from URL hash if present (implicit flow)
+        // The browser client often handles this automatically, but being explicit is safer.
+        if (typeof window !== "undefined") {
+          const hash = window.location.hash
+          const search = window.location.search
+          const params = new URLSearchParams(search)
+          const code = params.get("code")
+
+          if (hash) {
+            const { data: urlData, error: urlError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
+            if (urlError) {
+              console.warn("Unable to parse Supabase reset session from URL:", urlError)
+            }
+            if (urlData?.session) {
+              if (mounted) {
+                setHasSession(true)
+                setReady(true)
+              }
+              return
+            }
+          } else if (code) {
+            const { data: codeData, error: codeError } = await supabase.auth.exchangeCodeForSession(code)
+            if (codeError) {
+              console.warn("Unable to exchange code for session:", codeError)
+            }
+            if (codeData?.session) {
+              if (mounted) {
+                setHasSession(true)
+                setReady(true)
+              }
+              return
+            }
+          }
+        }
+
+        // Fallback to getting current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) {
+          console.error("Error fetching session:", sessionError)
+        }
+        
+        if (mounted) {
+          setHasSession(!!session)
+        }
+      } catch (err) {
+        console.error("Unexpected error during session initialization:", err)
+      } finally {
+        if (mounted) {
+          setReady(true)
+        }
+      }
     }
 
     initSession()
+
+    // Safety timeout: ensure we don't show the spinner forever
+    const timer = setTimeout(() => {
+      if (mounted && !ready) {
+        setReady(true)
+      }
+    }, 5000)
+
+    return () => {
+      mounted = false
+      clearTimeout(timer)
+    }
   }, [])
 
   function submit(e: React.FormEvent) {
