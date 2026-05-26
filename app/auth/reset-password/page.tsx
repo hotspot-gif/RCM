@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { Shield, Lock } from "lucide-react"
+import { Shield, Lock, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -18,103 +18,113 @@ export default function ResetPasswordPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [formData, setFormData] = useState({ password: "", confirmPassword: "" })
 
+  const checkSession = async (mounted: boolean) => {
+    try {
+      const supabase = createClient()
+      // Use getUser() as it's more reliable than getSession() for verifying a fresh session
+      const { data: { user }, error } = await supabase.auth.getUser()
+      
+      if (mounted) {
+        if (user) {
+          console.log("Session verified for user:", user.email)
+          setHasSession(true)
+          setReady(true)
+          return true
+        }
+        if (error && error.status !== 401) {
+          console.warn("Auth check warning:", error.message)
+        }
+      }
+    } catch (e) {
+      console.error("Session check failed:", e)
+    }
+    return false
+  }
+
   useEffect(() => {
     let mounted = true
     const supabase = createClient()
 
-    const initSession = async () => {
-      try {
-        if (typeof window === "undefined") return
+    const init = async () => {
+      if (typeof window === "undefined") return
 
-        const searchParams = new URLSearchParams(window.location.search)
-        const error = searchParams.get("error")
-        const errorDescription = searchParams.get("error_description")
-        const code = searchParams.get("code")
+      const params = new URLSearchParams(window.location.search)
+      const error = params.get("error")
+      const errorDescription = params.get("error_description")
+      const code = params.get("code")
 
-        console.log("Reset password page initialized", { 
-          hasCode: !!code, 
-          hasHash: !!window.location.hash,
-          error,
-          errorDescription 
-        })
+      console.log("Initializing reset-password page", { 
+        hasCode: !!code, 
+        hasHash: !!window.location.hash,
+        error 
+      })
 
-        if (error || errorDescription) {
+      // 1. Handle explicit Supabase verification errors
+      if (error || errorDescription) {
+        if (mounted) {
+          setErrorMsg(errorDescription || error || "Link verification failed.")
+          setReady(true)
+        }
+        return
+      }
+
+      // 2. Handle PKCE code exchange
+      if (code) {
+        console.log("Exchanging PKCE code...")
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+        if (exchangeError) {
+          console.error("Exchange error:", exchangeError)
           if (mounted) {
-            setErrorMsg(errorDescription || error || "An error occurred during password reset.")
+            setErrorMsg(`Verification failed: ${exchangeError.message}. Please request a new link.`)
             setReady(true)
           }
           return
         }
-
-        // 1. If PKCE flow, exchange code
-        if (code) {
-          console.log("Exchanging code for session...")
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-          if (exchangeError) {
-            console.error("Code exchange error:", exchangeError)
-            if (mounted) {
-              setErrorMsg(`Invalid or expired reset link: ${exchangeError.message}`)
-              setReady(true)
-            }
-            return
-          }
-          if (data?.session) {
-            console.log("Session established via code exchange")
-            if (mounted) {
-              setHasSession(true)
-              setReady(true)
-            }
-            return
-          }
-        }
-
-        // 2. If Implicit flow, the hash is handled by the client automatically.
-        // We can check if a session was established after a short delay or via onAuthStateChange.
-        if (window.location.hash) {
-          console.log("Detected hash in URL, waiting for client to process...")
-          // The browser client handles hash fragments automatically on initialization.
-          // We'll give it a moment and then check getSession.
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
-
-        // 3. Fallback: check if we already have a session
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError) {
-          console.error("Error fetching session:", sessionError)
-        }
-
-        if (mounted) {
-          console.log("Final session check", { hasSession: !!currentSession })
-          setHasSession(!!currentSession)
+        if (data?.session && mounted) {
+          console.log("PKCE exchange successful")
+          setHasSession(true)
           setReady(true)
+          return
         }
-      } catch (err) {
-        console.error("Unexpected error during session initialization:", err)
-        if (mounted) {
-          const msg = err instanceof Error ? err.message : String(err)
-          setErrorMsg(`An unexpected error occurred: ${msg}. Please try again or contact support.`)
-          setReady(true)
+      }
+
+      // 3. Initial check for session
+      const found = await checkSession(mounted)
+      if (found) return
+
+      // 4. If we have a hash, it might take a moment for the client library to parse it and set cookies
+      if (window.location.hash) {
+        console.log("Hash detected, starting retry loop...")
+        for (let i = 0; i < 6; i++) {
+          await new Promise(r => setTimeout(r, 1000))
+          if (!mounted) return
+          const foundRetry = await checkSession(mounted)
+          if (foundRetry) return
+          console.log(`Retry ${i + 1} for session detection...`)
         }
+      }
+
+      // 5. Done checking
+      if (mounted) {
+        setReady(true)
       }
     }
 
-    // Use onAuthStateChange to catch the session being established
+    // Auth state listener as a secondary catch for background updates
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state change event:", event, !!session)
-      if (mounted) {
-        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
-          setHasSession(true)
-          setReady(true)
-        }
+      console.log("Auth event:", event, !!session)
+      if (mounted && session) {
+        setHasSession(true)
+        setReady(true)
       }
     })
 
-    initSession()
+    init()
 
-    // Safety timeout: ensure we don't show the spinner forever
+    // Safety timeout: stop spinner after 10s regardless
     const timer = setTimeout(() => {
       if (mounted && !ready) {
-        console.log("Safety timeout reached, setting ready")
+        console.log("Safety timeout reached")
         setReady(true)
       }
     }, 10000)
@@ -193,8 +203,16 @@ export default function ResetPasswordPage() {
             {errorMsg}
           </div>
         ) : !hasSession ? (
-          <div className="rounded-lg border p-3 text-sm text-muted-foreground">
-            This reset link is invalid or has expired. Request a new one from your administrator.
+          <div className="space-y-4">
+            <div className="rounded-lg border p-3 text-sm text-muted-foreground">
+              This reset link is invalid or has expired. Request a new one from your administrator.
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
+                 <RefreshCw className="mr-2 h-4 w-4" />
+                 Check again
+               </Button>
+            </div>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
