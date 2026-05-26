@@ -183,6 +183,8 @@ export const translations = {
     signature: "Signature",
     otp: "OTP",
     done: "Done",
+    retailerNetwork: "Lycamobile Retailer Network — Contracts",
+    allRightsReserved: "All rights reserved.",
     
     // Auth
     login: "Login",
@@ -377,6 +379,8 @@ export const translations = {
     signature: "Firma",
     otp: "OTP",
     done: "Completato",
+    retailerNetwork: "Rete Retailer Lycamobile — Contrattualistica",
+    allRightsReserved: "Tutti i diritti riservati.",
     
     // Auth
     login: "Accedi",

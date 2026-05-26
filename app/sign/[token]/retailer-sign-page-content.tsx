@@ -1,41 +1,86 @@
 "use client"
 
 import Image from "next/image"
+import { Languages, Check, ChevronDown } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useI18n } from "@/lib/i18n/i18n-context"
 import { RetailerSignPanel } from "./retailer-sign-panel"
 import type { Contract } from "@/lib/types"
 
 function RemoteSignShell({ children }: { children: React.ReactNode }) {
+  const { t, language, setLanguage } = useI18n()
+
   return (
     <div className="flex min-h-dvh flex-col bg-[#EEF1F8]">
       <header className="bg-[#21254F]">
-        <div className="mx-auto flex w-full max-w-2xl flex-row flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
-          <div className="flex items-center">
-            <Image
-              src="https://eef221ebb9.imgdist.com/pub/bfra/85md611j/2vz/vdh/2hp/uslogo.png"
-              alt="Universal Service Logo"
-              width={160}
-              height={45}
-              className="h-9 w-auto object-contain"
-              priority
-            />
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between px-4 py-4 sm:px-6">
+          <div className="flex flex-row flex-wrap items-center gap-4">
+            <div className="flex items-center">
+              <Image
+                src="https://eef221ebb9.imgdist.com/pub/bfra/85md611j/2vz/vdh/2hp/uslogo.png"
+                alt="Universal Service Logo"
+                width={160}
+                height={45}
+                className="h-9 w-auto object-contain"
+                priority
+              />
+            </div>
+            <div className="flex-none h-10 w-px bg-white/25 hidden sm:block" />
+            <div className="min-w-0 text-sm text-white/90 hidden sm:block">
+              <p className="font-semibold text-white">Universal Service 2006 SRL</p>
+              <p>{t("retailerNetwork")}</p>
+            </div>
           </div>
-          <div className="flex-none h-10 w-px bg-white/25" />
-          <div className="min-w-0 text-sm text-white/90">
-            <p className="font-semibold text-white">Universal Service 2006 SRL</p>
-            <p>Rete Retailer Lycamobile — Contrattualistica</p>
-          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 hover:text-white gap-2">
+                <Languages className="h-4 w-4" />
+                <span className="text-xs font-medium uppercase tracking-wider">{language}</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[150px]">
+              <DropdownMenuItem
+                className="flex items-center justify-between"
+                onClick={() => setLanguage("en")}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-lg">🇬🇧</span> English
+                </span>
+                {language === "en" && <Check className="h-4 w-4" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="flex items-center justify-between"
+                onClick={() => setLanguage("it")}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-lg">🇮🇹</span> Italiano
+                </span>
+                {language === "it" && <Check className="h-4 w-4" />}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 sm:px-6">{children}</main>
 
       <footer className="bg-[#21254F]">
-        <div className="mx-auto w-full max-w-2xl px-6 py-4 text-xs leading-relaxed text-white/80">
-          <p>Universal Service 2006 S.R.L</p>
+        <div className="mx-auto w-full max-w-2xl px-6 py-4 text-[10px] leading-relaxed text-white/60 sm:text-xs">
+          <p className="font-medium text-white/80">Universal Service 2006 S.R.L</p>
           <p>Via Genzano 195, 00179 Roma, Italia</p>
           <p>Tel: 0689971909 · Fax: 06765455 · Email: hotspot.it@lycamobile.com</p>
+          <p className="mt-2 pt-2 border-t border-white/10 italic">
+            © {new Date().getFullYear()} {t("allRightsReserved")}
+          </p>
         </div>
       </footer>
     </div>
