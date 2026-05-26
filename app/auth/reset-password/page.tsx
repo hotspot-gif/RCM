@@ -15,67 +15,96 @@ export default function ResetPasswordPage() {
   const [pending, startTransition] = useTransition()
   const [ready, setReady] = useState(false)
   const [hasSession, setHasSession] = useState<boolean>(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [formData, setFormData] = useState({ password: "", confirmPassword: "" })
 
   useEffect(() => {
     let mounted = true
+    const supabase = createClient()
 
     const initSession = async () => {
       try {
-        const supabase = createClient()
-        
-        // Try to get session from URL hash if present (implicit flow)
-        // The browser client often handles this automatically, but being explicit is safer.
-        if (typeof window !== "undefined") {
-          const hash = window.location.hash
-          const search = window.location.search
-          const params = new URLSearchParams(search)
-          const code = params.get("code")
+        if (typeof window === "undefined") return
 
-          if (hash) {
-            const { data: urlData, error: urlError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
-            if (urlError) {
-              console.warn("Unable to parse Supabase reset session from URL:", urlError)
+        const searchParams = new URLSearchParams(window.location.search)
+        const error = searchParams.get("error")
+        const errorDescription = searchParams.get("error_description")
+        const code = searchParams.get("code")
+
+        if (error || errorDescription) {
+          if (mounted) {
+            setErrorMsg(errorDescription || error || "An error occurred during password reset.")
+            setReady(true)
+          }
+          return
+        }
+
+        // 1. Check if we already have a session
+        const { data: { session: currentSession } } = await supabase.auth.getSession()
+        if (currentSession) {
+          if (mounted) {
+            setHasSession(true)
+            setReady(true)
+          }
+          return
+        }
+
+        // 2. If PKCE flow, exchange code
+        if (code) {
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          if (exchangeError) {
+            console.error("Code exchange error:", exchangeError)
+            if (mounted) {
+              setErrorMsg(exchangeError.message)
+              setReady(true)
             }
-            if (urlData?.session) {
-              if (mounted) {
-                setHasSession(true)
-                setReady(true)
-              }
-              return
-            }
-          } else if (code) {
-            const { data: codeData, error: codeError } = await supabase.auth.exchangeCodeForSession(code)
-            if (codeError) {
-              console.warn("Unable to exchange code for session:", codeError)
-            }
-            if (codeData?.session) {
-              if (mounted) {
-                setHasSession(true)
-                setReady(true)
-              }
-              return
-            }
+            return
+          }
+          if (data?.session && mounted) {
+            setHasSession(true)
+            setReady(true)
+            return
           }
         }
 
-        // Fallback to getting current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError) {
-          console.error("Error fetching session:", sessionError)
+        // 3. If Implicit flow, the hash is handled by the client automatically,
+        // but we can try to force it if needed.
+        if (window.location.hash) {
+          const { data: hashData, error: hashError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
+          if (hashError) {
+            console.warn("Hash parsing error:", hashError)
+          }
+          if (hashData?.session && mounted) {
+            setHasSession(true)
+            setReady(true)
+            return
+          }
         }
-        
+
+        // If we reach here, we check one last time if a session was established
+        const { data: { session: finalCheck } } = await supabase.auth.getSession()
         if (mounted) {
-          setHasSession(!!session)
+          setHasSession(!!finalCheck)
+          setReady(true)
         }
       } catch (err) {
         console.error("Unexpected error during session initialization:", err)
-      } finally {
         if (mounted) {
+          setErrorMsg("An unexpected error occurred. Please try again.")
           setReady(true)
         }
       }
     }
+
+    // Use onAuthStateChange to catch the session being established
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (mounted) {
+        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+          setHasSession(true)
+          setReady(true)
+        }
+      }
+    })
 
     initSession()
 
@@ -84,10 +113,11 @@ export default function ResetPasswordPage() {
       if (mounted && !ready) {
         setReady(true)
       }
-    }, 5000)
+    }, 8000)
 
     return () => {
       mounted = false
+      subscription.unsubscribe()
       clearTimeout(timer)
     }
   }, [])
@@ -154,7 +184,11 @@ export default function ResetPasswordPage() {
           </div>
         </div>
 
-        {!hasSession ? (
+        {errorMsg ? (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+            {errorMsg}
+          </div>
+        ) : !hasSession ? (
           <div className="rounded-lg border p-3 text-sm text-muted-foreground">
             This reset link is invalid or has expired. Request a new one from your administrator.
           </div>

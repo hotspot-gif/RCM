@@ -121,9 +121,15 @@ export async function deleteUserAction(id: string): Promise<ActionResult> {
 
 async function getOriginFromHeaders(): Promise<string | null> {
   const h = await headers()
-  const proto = h.get("x-forwarded-proto") ?? "http"
   const host = h.get("x-forwarded-host") ?? h.get("host")
   if (!host) return null
+  
+  // Default to https for production-like environments unless it's localhost
+  let proto = h.get("x-forwarded-proto")
+  if (!proto) {
+    proto = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https"
+  }
+  
   return `${proto}://${host}`
 }
 
