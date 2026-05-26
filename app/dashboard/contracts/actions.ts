@@ -1010,7 +1010,7 @@ export async function sendContractEmailAction(
   }
 }
 
-async function buildDraftContractPdf(contract: Contract, staffSignerName: string) {
+export async function buildDraftContractPdf(contract: Contract, staffSignerName: string) {
   const loadPng = async (name: string): Promise<Uint8Array | null> => {
     try {
       const buf = await readFile(path.join(process.cwd(), "public", name))

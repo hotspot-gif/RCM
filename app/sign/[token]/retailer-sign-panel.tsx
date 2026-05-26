@@ -15,7 +15,7 @@ import {
   saveRetailerSignatureByTokenAction,
   verifyContractOtpByTokenAction,
   getDraftContractPdfAction,
-} from "./actions"
+} from "@/app/sign/[token]/actions"
 import { useI18n } from "@/lib/i18n/i18n-context"
 
 export function RetailerSignPanel(props: {
@@ -151,9 +151,18 @@ export function RetailerSignPanel(props: {
         toast.error(res.error)
         return
       }
-      const blob = new Blob([Buffer.from(res.data!, "base64")], {
-        type: "application/pdf",
-      })
+      
+      const base64ToBlob = (base64: string, type = "application/pdf") => {
+        const binStr = atob(base64)
+        const len = binStr.length
+        const arr = new Uint8Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = binStr.charCodeAt(i)
+        }
+        return new Blob([arr], { type })
+      }
+
+      const blob = base64ToBlob(res.data!)
       const objectUrl = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = objectUrl

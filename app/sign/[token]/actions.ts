@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { headers } from "next/headers"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { buildDraftContractPdf } from "@/app/dashboard/contracts/actions"
 import type { Contract } from "@/lib/types"
 
 export type ActionResult<T = undefined> =
@@ -346,6 +347,22 @@ export async function verifyContractOtpByTokenAction(input: {
     if (verErr) return { ok: false, error: verErr.message }
 
     return { ok: true, data: { verifiedAt } }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
+  }
+}
+
+export async function getDraftContractPdfAction(
+  token: string,
+): Promise<ActionResult<string>> {
+  try {
+    const contract = await getContractByToken(token)
+    if (!contract) return { ok: false, error: "Invalid signing link." }
+
+    const { pdfBytes } = await buildDraftContractPdf(contract, "Staff Manager")
+    const base64 = Buffer.from(pdfBytes).toString("base64")
+
+    return { ok: true, data: base64 }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unknown error" }
   }
