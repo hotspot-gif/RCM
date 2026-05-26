@@ -50,7 +50,7 @@ export function UsersTable({ users }: { users: AppUser[] }) {
   const NORTH_BRANCHES = ["LMIT-HS-BOLOGNA", "LMIT-HS-MILAN", "LMIT-HS-PADOVA", "LMIT-HS-TORINO"]
 
   function formatAssignments(u: AppUser) {
-    if (u.role === "ADMIN") return "SYSTEM"
+    if (u.role === "ADMIN") return "ITALY"
     
     const userBranches = u.branches || (u.branch ? [u.branch] : [])
     if (userBranches.length === 0) return "UNASSIGNED"

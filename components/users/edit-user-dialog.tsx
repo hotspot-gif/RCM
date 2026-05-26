@@ -124,124 +124,110 @@ export function EditUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="px-6 pt-6">
-          <DialogTitle className="text-2xl font-bold text-brand-navy flex items-center gap-2">
-            <Pencil className="h-5 w-5 text-brand-navy" />
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden border-none shadow-2xl">
+        <DialogHeader className="px-6 pt-6 pb-4 bg-brand-navy">
+          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+            <Pencil className="h-5 w-5 text-white/80" />
             Edit Staff Member
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Update roles, regional assignments, and account security for <strong>{user.full_name}</strong>.
+          <DialogDescription className="text-white/70 text-xs">
+            Modify permissions and security settings for <strong>{user.full_name}</strong>.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={submit} className="px-6 pb-6 space-y-6">
-          <div className="bg-brand-navy/[0.02] p-4 rounded-xl border border-brand-navy/10 space-y-4">
-            <h3 className="text-xs font-bold text-brand-navy uppercase tracking-widest mb-2 flex items-center gap-2">
-              <Shield className="h-3 w-3" />
-              Profile & Access
-            </h3>
-            <UserFormFields
-              values={values}
-              onChange={(p) => setValues((v) => ({ ...v, ...p }))}
-              emailDisabled
-            />
-
-            <div className="flex items-center justify-between rounded-lg bg-white border p-4 shadow-sm mt-4">
-              <div className="flex flex-col">
-                <Label htmlFor="is_active" className="text-sm font-bold text-brand-navy">
-                  Account Access
-                </Label>
-                <span className="text-xs text-muted-foreground">
-                  {values.is_active ? "User can currently sign in." : "User is currently locked out."}
-                </span>
-              </div>
-              <Switch
-                id="is_active"
-                checked={values.is_active}
-                onCheckedChange={(v) => setValues((prev) => ({ ...prev, is_active: v }))}
-                className="data-[state=checked]:bg-emerald-500"
+        <form onSubmit={submit} className="flex flex-col">
+          <div className="px-6 py-5 space-y-5 bg-white">
+            <div className="space-y-4">
+              <UserFormFields
+                values={values}
+                onChange={(p) => setValues((v) => ({ ...v, ...p }))}
+                emailDisabled
               />
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-4 rounded-xl border p-4 bg-muted/30 shadow-sm border-brand-navy/10">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <h3 className="text-xs font-bold text-brand-navy uppercase tracking-widest mb-1 flex items-center gap-2">
-                  <Key className="h-3 w-3" />
-                  Security Controls
-                </h3>
-                <span className="text-[10px] text-muted-foreground">
-                  Reset user password if they are unable to sign in.
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={sendPasswordResetEmail}
-                  disabled={pending}
-                  className="h-8 border-brand-navy/20 hover:bg-brand-navy/5 text-brand-navy"
-                >
-                  {pending ? <Spinner className="mr-2 h-3 w-3" /> : <Mail className="mr-2 h-3 w-3" />}
-                  Email Reset Link
-                </Button>
-                <Button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  onClick={resetToTempPassword}
-                  disabled={pending}
-                  className="h-8 bg-brand-navy hover:bg-brand-navy/90 shadow-md"
-                >
-                  {pending ? <Spinner className="mr-2 h-3 w-3" /> : <Key className="mr-2 h-3 w-3" />}
-                  Set Temp Password
-                </Button>
-              </div>
-            </div>
-
-            {tempPassword && (
-              <div className="flex flex-col gap-2 rounded-lg bg-white p-4 border-2 border-dashed border-brand-navy/30 animate-in zoom-in-95 duration-300 shadow-inner">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-[10px] font-black text-brand-navy uppercase tracking-tighter opacity-50">New Temporary Password</p>
-                  <Badge variant="outline" className="text-[9px] h-4 bg-emerald-50 text-emerald-700 border-emerald-200 uppercase font-black">Active Now</Badge>
+              <div className="flex items-center justify-between rounded-lg bg-brand-navy/[0.03] border border-brand-navy/10 p-3 shadow-sm mt-2">
+                <div className="flex flex-col">
+                  <Label htmlFor="is_active" className="text-xs font-bold text-brand-navy uppercase tracking-wider">
+                    Account Access
+                  </Label>
+                  <span className="text-[10px] text-muted-foreground uppercase font-medium">
+                    {values.is_active ? "Authorized to sign in" : "Access currently revoked"}
+                  </span>
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <code className="flex-1 rounded-md bg-muted/50 px-3 py-2 text-xl font-mono font-black text-brand-navy tracking-widest border border-brand-navy/5">
-                    {tempPassword}
-                  </code>
+                <Switch
+                  id="is_active"
+                  checked={values.is_active}
+                  onCheckedChange={(v) => setValues((prev) => ({ ...prev, is_active: v }))}
+                  className="data-[state=checked]:bg-emerald-500 scale-90"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-xl border p-4 bg-muted/20 border-brand-navy/5">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <h3 className="text-[10px] font-black text-brand-navy/50 uppercase tracking-[0.2em]">Security Controls</h3>
+                </div>
+                <div className="flex gap-2">
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    onClick={copyToClipboard}
-                    className="h-10 w-10 shrink-0 border-brand-navy/20 hover:border-brand-navy hover:bg-brand-navy/5"
+                    size="sm"
+                    onClick={sendPasswordResetEmail}
+                    disabled={pending}
+                    className="h-7 text-[10px] border-brand-navy/10 hover:bg-brand-navy/5 text-brand-navy font-bold uppercase"
                   >
-                    {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-brand-navy" />}
+                    {pending ? <Spinner className="mr-1.5 h-3 w-3" /> : <Mail className="mr-1.5 h-3 w-3" />}
+                    Email Link
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={resetToTempPassword}
+                    disabled={pending}
+                    className="h-7 text-[10px] bg-brand-navy hover:bg-brand-navy/90 shadow-sm font-bold uppercase"
+                  >
+                    {pending ? <Spinner className="mr-1.5 h-3 w-3" /> : <Key className="mr-1.5 h-3 w-3" />}
+                    Set Temp
                   </Button>
                 </div>
-                <p className="text-[10px] text-muted-foreground italic leading-tight mt-1">
-                  <strong>Important:</strong> Provide this password to the user. It works immediately and they should update it upon first login.
-                </p>
               </div>
-            )}
+
+              {tempPassword && (
+                <div className="flex flex-col gap-2 rounded-lg bg-white p-3 border border-brand-navy/10 animate-in zoom-in-95 duration-300">
+                  <div className="flex items-center justify-between gap-3">
+                    <code className="flex-1 rounded-md bg-muted/30 px-3 py-1.5 text-lg font-mono font-black text-brand-navy tracking-widest border border-brand-navy/5">
+                      {tempPassword}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={copyToClipboard}
+                      className="h-9 w-9 shrink-0 border-brand-navy/10 hover:border-brand-navy/30 hover:bg-brand-navy/5"
+                    >
+                      {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-brand-navy/50" />}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <DialogFooter className="pt-2 border-t mt-2">
+          <DialogFooter className="px-6 py-4 bg-muted/30 border-t flex items-center justify-end gap-3">
             <Button
               type="button"
               variant="ghost"
+              size="sm"
               onClick={() => onOpenChange(false)}
               disabled={pending}
-              className="text-muted-foreground"
+              className="text-xs font-bold text-muted-foreground uppercase tracking-wider"
             >
-              Discard Changes
+              Discard
             </Button>
-            <Button type="submit" disabled={pending} className="bg-brand-navy hover:bg-brand-navy/90 px-8 shadow-lg">
+            <Button type="submit" disabled={pending} size="sm" className="bg-brand-navy hover:bg-brand-navy/90 px-8 shadow-md text-xs font-bold uppercase tracking-widest">
               {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-              Save All Changes
+              Update Account
             </Button>
           </DialogFooter>
         </form>
