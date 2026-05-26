@@ -31,6 +31,13 @@ export default function ResetPasswordPage() {
         const errorDescription = searchParams.get("error_description")
         const code = searchParams.get("code")
 
+        console.log("Reset password page initialized", { 
+          hasCode: !!code, 
+          hasHash: !!window.location.hash,
+          error,
+          errorDescription 
+        })
+
         if (error || errorDescription) {
           if (mounted) {
             setErrorMsg(errorDescription || error || "An error occurred during password reset.")
@@ -39,58 +46,62 @@ export default function ResetPasswordPage() {
           return
         }
 
-        // 1. Check if we already have a session
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
-        if (currentSession) {
-          if (mounted) {
-            setHasSession(true)
-            setReady(true)
-          }
-          return
-        }
-
-        // 2. If PKCE flow, exchange code
+        // 1. If PKCE flow, exchange code
         if (code) {
+          console.log("Exchanging code for session...")
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
           if (exchangeError) {
             console.error("Code exchange error:", exchangeError)
             if (mounted) {
-              setErrorMsg(exchangeError.message)
+              setErrorMsg(`Invalid or expired reset link: ${exchangeError.message}`)
               setReady(true)
             }
             return
           }
-          if (data?.session && mounted) {
-            setHasSession(true)
-            setReady(true)
+          if (data?.session) {
+            console.log("Session established via code exchange")
+            if (mounted) {
+              setHasSession(true)
+              setReady(true)
+            }
             return
           }
         }
 
-        // 3. If Implicit flow, the hash is handled by the client automatically,
+        // 2. If Implicit flow, the hash is handled by the client automatically,
         // but we can try to force it if needed.
         if (window.location.hash) {
+          console.log("Parsing session from hash...")
           const { data: hashData, error: hashError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
           if (hashError) {
             console.warn("Hash parsing error:", hashError)
           }
-          if (hashData?.session && mounted) {
-            setHasSession(true)
-            setReady(true)
+          if (hashData?.session) {
+            console.log("Session established via hash")
+            if (mounted) {
+              setHasSession(true)
+              setReady(true)
+            }
             return
           }
         }
 
-        // If we reach here, we check one last time if a session was established
-        const { data: { session: finalCheck } } = await supabase.auth.getSession()
+        // 3. Fallback: check if we already have a session
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) {
+          console.error("Error fetching session:", sessionError)
+        }
+
         if (mounted) {
-          setHasSession(!!finalCheck)
+          console.log("Final session check", { hasSession: !!currentSession })
+          setHasSession(!!currentSession)
           setReady(true)
         }
       } catch (err) {
         console.error("Unexpected error during session initialization:", err)
         if (mounted) {
-          setErrorMsg("An unexpected error occurred. Please try again.")
+          const msg = err instanceof Error ? err.message : String(err)
+          setErrorMsg(`An unexpected error occurred: ${msg}. Please try again or contact support.`)
           setReady(true)
         }
       }
@@ -98,6 +109,7 @@ export default function ResetPasswordPage() {
 
     // Use onAuthStateChange to catch the session being established
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state change event:", event, !!session)
       if (mounted) {
         if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
           setHasSession(true)
@@ -111,9 +123,10 @@ export default function ResetPasswordPage() {
     // Safety timeout: ensure we don't show the spinner forever
     const timer = setTimeout(() => {
       if (mounted && !ready) {
+        console.log("Safety timeout reached, setting ready")
         setReady(true)
       }
-    }, 8000)
+    }, 10000)
 
     return () => {
       mounted = false
