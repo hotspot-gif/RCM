@@ -57,6 +57,9 @@ export function RetailerSignPanel(props: {
   const [otpVerifiedAt, setOtpVerifiedAt] = useState<string | null>(
     props.initial.otpVerifiedAt ?? null,
   )
+  const [retailerSigPath, setRetailerSigPath] = useState<string | null>(
+    props.initial.retailerSignaturePath ?? null,
+  )
 
   const expired = (() => {
     if (!props.initial.signLinkExpiresAt) return true
@@ -65,8 +68,8 @@ export function RetailerSignPanel(props: {
   })()
 
   const completed =
-    !!props.initial.signLinkUsedAt ||
-    (props.initial.retailerSignaturePath && otpVerifiedAt)
+    !!props.initial.sign_link_used_at ||
+    (!!retailerSigPath && !!otpVerifiedAt)
 
   const progressValue = step === 0 ? 0 : step === 1 ? 33 : step === 2 ? 66 : 100
 
@@ -103,6 +106,8 @@ export function RetailerSignPanel(props: {
         toast.error(saved.error)
         return
       }
+
+      setRetailerSigPath(saved.data!.retailerSignaturePath)
 
       const res = await requestContractOtpByTokenAction(props.token)
       if (!res.ok) {
