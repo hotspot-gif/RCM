@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react"
 import { toast } from "sonner"
-import { ArrowLeft, CheckCircle2, Download, FileText, User, MapPin, Phone, Mail, Hash } from "lucide-react"
+import { ArrowLeft, ArrowRight, CheckCircle2, Download, FileText, User, MapPin, Phone, Mail, Hash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
@@ -15,7 +15,7 @@ import {
   saveRetailerSignatureByTokenAction,
   verifyContractOtpByTokenAction,
   getDraftContractPdfAction,
-} from "@/app/sign/[token]/actions"
+} from "./actions"
 import { useI18n } from "@/lib/i18n/i18n-context"
 
 export function RetailerSignPanel(props: {
