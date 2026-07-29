@@ -135,6 +135,28 @@ export default async function HomePage() {
             </CardContent>
           </Card>
 
+          {/* Retailer Detail Validation Card */}
+          <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-blue/20">
+            <div className="absolute top-0 h-1.5 w-full bg-brand-blue" />
+            <CardHeader className="pb-4">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy text-brand-cream shadow-inner group-hover:scale-110 transition-transform">
+                <FileText className="h-7 w-7" />
+              </div>
+              <CardTitle className="text-2xl font-bold text-brand-navy">Retailer Detail Validation</CardTitle>
+              <CardDescription className="text-slate-500">Generate retailer detail validation forms</CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto flex flex-col gap-4 pt-0">
+              <Link
+                href="https://rdv.lycaops.com"
+                target="_blank"
+                className="flex items-center justify-between rounded-lg bg-brand-navy p-3 text-brand-cream transition-opacity hover:opacity-90"
+              >
+                <span className="text-sm font-bold uppercase tracking-wider">Retailer Detail Validation Form</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </CardContent>
+          </Card>
+
           {/* Retailer Incentives Card */}
           <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-yellow/20">
             <div className="absolute top-0 h-1.5 w-full bg-brand-yellow" />
@@ -164,28 +186,6 @@ export default async function HomePage() {
                   <ExternalLink className="h-4 w-4 text-slate-400" />
                 </Link>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Retailer Detail Validation Card */}
-          <Card className="group relative flex flex-col overflow-hidden border-none bg-white shadow-sm ring-1 ring-brand-navy/5 transition-all hover:shadow-xl hover:ring-brand-blue/20">
-            <div className="absolute top-0 h-1.5 w-full bg-brand-blue" />
-            <CardHeader className="pb-4">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-navy text-brand-cream shadow-inner group-hover:scale-110 transition-transform">
-                <FileText className="h-7 w-7" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-brand-navy">Retailer Detail Validation</CardTitle>
-              <CardDescription className="text-slate-500">Generate retailer detail validation forms</CardDescription>
-            </CardHeader>
-            <CardContent className="mt-auto flex flex-col gap-4 pt-0">
-              <Link
-                href="https://rdv.lycaops.com"
-                target="_blank"
-                className="flex items-center justify-between rounded-lg bg-brand-navy p-3 text-brand-cream transition-opacity hover:opacity-90"
-              >
-                <span className="text-sm font-bold uppercase tracking-wider">Retailer Detail Validation Form</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
             </CardContent>
           </Card>
 
