@@ -26,6 +26,7 @@ const initial = {
   branch: null as string | null,
   branches: null as string[] | null,
   zone: null as string | null,
+  can_capture_signature: true,
 }
 
 export function NewUserDialog() {
@@ -48,6 +49,7 @@ export function NewUserDialog() {
         branch: values.branch,
         branches: values.branches,
         zone: values.zone,
+        can_capture_signature: values.can_capture_signature,
       })
       if (!res.ok) {
         toast.error(res.error)

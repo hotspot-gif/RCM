@@ -3,6 +3,7 @@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ interface Values {
   branch: string | null
   branches?: string[] | null
   zone: string | null
+  can_capture_signature?: boolean
 }
 
 interface Props {
@@ -182,6 +184,24 @@ export function UserFormFields({
           </Select>
         </div>
       ) : null}
+
+      <div className="flex items-center justify-between gap-3 rounded-lg border bg-white p-3 shadow-sm">
+        <div className="flex flex-col">
+          <Label className="text-xs font-semibold text-brand-navy uppercase tracking-wider">
+            Digital Signature Capture
+          </Label>
+          <span className="text-[10px] text-muted-foreground font-medium">
+            {(values.can_capture_signature ?? true)
+              ? "Authorized to capture signatures on this device"
+              : "Restricted — must download the draft PDF and sign offline"}
+          </span>
+        </div>
+        <Switch
+          checked={values.can_capture_signature ?? true}
+          onCheckedChange={(v) => onChange({ can_capture_signature: v })}
+          className="data-[state=checked]:bg-emerald-500 scale-90 shrink-0"
+        />
+      </div>
     </div>
   )
 }

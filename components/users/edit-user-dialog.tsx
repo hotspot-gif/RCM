@@ -41,6 +41,7 @@ export function EditUserDialog({
     branches: null as string[] | null,
     zone: null as string | null,
     is_active: true,
+    can_capture_signature: true,
   })
   const [pending, startTransition] = useTransition()
   const [tempPassword, setTempPassword] = useState<string | null>(null)
@@ -58,6 +59,7 @@ export function EditUserDialog({
         branches: user.branches ?? null,
         zone: user.zone,
         is_active: user.is_active,
+        can_capture_signature: user.can_capture_signature ?? true,
       })
     }
   }, [user])
@@ -79,6 +81,7 @@ export function EditUserDialog({
         branches: values.branches,
         zone: values.zone,
         is_active: values.is_active,
+        can_capture_signature: values.can_capture_signature,
       })
       if (!res.ok) {
         toast.error(res.error)

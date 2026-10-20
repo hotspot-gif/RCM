@@ -9,6 +9,7 @@ export interface AppUser {
   branches?: string[] | null
   zone: string | null
   is_active: boolean
+  can_capture_signature?: boolean | null
   created_at: string
 }
 

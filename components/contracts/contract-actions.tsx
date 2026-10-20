@@ -48,8 +48,6 @@ export function ContractActions({
   const [pendingDraft, startDraft] = useTransition()
   const [pendingDraftShare, startDraftShare] = useTransition()
 
-  const disabled = status !== "SIGNED"
-
   function downloadDraft() {
     const popup = isIosSafari() ? window.open("", "_blank") : null
     startDraft(async () => {
@@ -211,26 +209,26 @@ export function ContractActions({
           </DropdownMenu>
         </>
       )}
-      <Button onClick={download} disabled={disabled || pendingDownload}>
-        {pendingDownload ? (
-          <Spinner className="mr-2 h-4 w-4" />
-        ) : (
-          <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-        )}
-        {t("downloadPdf")}
-      </Button>
-      <Button
-        onClick={email}
-        variant="outline"
-        disabled={disabled || pendingEmail}
-      >
-        {pendingEmail ? (
-          <Spinner className="mr-2 h-4 w-4" />
-        ) : (
-          <Mail className="mr-1.5 h-4 w-4" aria-hidden="true" />
-        )}
-        {t("sendByEmail")}
-      </Button>
+      {status === "SIGNED" && (
+        <>
+          <Button onClick={download} disabled={pendingDownload}>
+            {pendingDownload ? (
+              <Spinner className="mr-2 h-4 w-4" />
+            ) : (
+              <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            )}
+            {t("downloadPdf")}
+          </Button>
+          <Button onClick={email} variant="outline" disabled={pendingEmail}>
+            {pendingEmail ? (
+              <Spinner className="mr-2 h-4 w-4" />
+            ) : (
+              <Mail className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            )}
+            {t("sendByEmail")}
+          </Button>
+        </>
+      )}
     </div>
   )
 }

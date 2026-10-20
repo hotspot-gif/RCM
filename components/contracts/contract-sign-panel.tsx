@@ -4,7 +4,17 @@ import { useRef, useState, useTransition, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft, CheckCircle2, Copy, Link2, ExternalLink } from "lucide-react"
+import {
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  Link2,
+  Smartphone,
+  RefreshCw,
+  PenLine,
+} from "lucide-react"
 import {
   Card,
   CardContent,
@@ -25,6 +35,9 @@ import {
   verifyContractOtpAction,
 } from "@/app/dashboard/contracts/actions"
 import { useI18n } from "@/lib/i18n/i18n-context"
+import { cn } from "@/lib/utils"
+
+type SignMode = "remote" | "device"
 
 export function ContractSignPanel({ contractId }: { contractId: string }) {
   const router = useRouter()
@@ -34,7 +47,8 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
   const [pending, startTransition] = useTransition()
   const [ack, setAck] = useState(false)
   const [gdpr, setGdpr] = useState(false)
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [mode, setMode] = useState<SignMode | null>(null)
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0)
   const [retailerSig, setRetailerSig] = useState<string | null>(null)
   const [otp, setOtp] = useState("")
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null)
@@ -79,8 +93,10 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     setOtpSentTo(res.data!.email)
 
     if (res.data!.retailerSignaturePath && res.data!.otpVerifiedAt) {
+      setMode("device")
       setStep(3)
     } else if (res.data!.retailerSignaturePath) {
+      setMode("device")
       setStep(2)
     }
     return res.data!
@@ -118,7 +134,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       cancelled = true
       window.clearInterval(id)
     }
-  }, [remoteLink, refreshSigningState, router, signingState, step, otpVerifiedAt])
+  }, [remoteLink, refreshSigningState, router, signingState, step, otpVerifiedAt, t])
 
   function onNext() {
     const retailerData = retailerRef.current?.toDataUrl()
@@ -209,7 +225,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     const currentRetailerData = retailerRef.current?.toDataUrl()
     const retailerData = currentRetailerData || retailerSig
     const staffData = staffRef.current?.toDataUrl()
-    
+
     const hasRetailerSig = !!retailerData || !!signingState?.retailerSignaturePath
     if (!hasRetailerSig || !ack || !gdpr) {
       setStep(1)
@@ -221,7 +237,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       toast.error(t("otpVerificationRequired"))
       return
     }
-    
+
     if (!staffData) {
       toast.error(t("staffSignatureRequired"))
       return
@@ -242,35 +258,61 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     })
   }
 
+  const subtitle =
+    mode === null
+      ? t("chooseSigningMethod")
+      : mode === "remote"
+        ? t("remoteSigningLinkDesc")
+        : step === 1
+          ? t("stepRetailerSignature")
+          : step === 2
+            ? t("stepOtpVerification")
+            : t("stepStaffSignature")
+
   return (
-    <Card className="border-2 shadow-lg">
-      <CardHeader className="border-b bg-muted/30">
+    <Card className="overflow-hidden border-2 shadow-lg">
+      <CardHeader className="border-b bg-gradient-to-br from-brand-navy/[0.06] to-transparent">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <CardTitle className="text-xl">{t("contractFinalization")}</CardTitle>
-            <CardDescription>
-              {step === 1
-                ? t("stepRetailerSignature")
-                : step === 2
-                  ? t("stepOtpVerification")
-                  : t("stepStaffSignature")}
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <PenLine className="h-5 w-5 shrink-0 text-brand-navy" aria-hidden="true" />
+              {t("contractFinalization")}
+            </CardTitle>
+            <CardDescription className="mt-1">{subtitle}</CardDescription>
           </div>
-          <div className="flex gap-1 sm:shrink-0">
-            <div className={`h-2 w-8 rounded-full ${step >= 1 ? "bg-brand-navy" : "bg-muted"}`} />
-            <div className={`h-2 w-8 rounded-full ${step >= 2 ? "bg-brand-navy" : "bg-muted"}`} />
-            <div className={`h-2 w-8 rounded-full ${step >= 3 ? "bg-brand-navy" : "bg-muted"}`} />
-          </div>
+          {mode === "device" ? <StepTracker step={step} /> : null}
         </div>
       </CardHeader>
       <CardContent className="pt-6">
-        <div className="flex flex-col gap-6">
-          <div className={step === 1 ? "flex flex-col gap-6" : "hidden"}>
-            <div className="rounded-lg border bg-muted/30 p-4">
+        {mode === null ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <MethodCard
+              icon={<Link2 className="h-5 w-5" aria-hidden="true" />}
+              title={t("useRemoteLink")}
+              description={t("useRemoteLinkDesc")}
+              onClick={() => setMode("remote")}
+            />
+            <MethodCard
+              icon={<Smartphone className="h-5 w-5" aria-hidden="true" />}
+              title={t("useThisDevice")}
+              description={t("useThisDeviceDesc")}
+              onClick={() => {
+                setMode("device")
+                setStep(1)
+              }}
+            />
+          </div>
+        ) : null}
+
+        {mode === "remote" ? (
+          <div className="flex flex-col gap-5">
+            <div className="rounded-xl border bg-muted/30 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-brand-navy">{t("remoteSigningLinkLabel")}</div>
-                  <div className="mt-1 text-sm text-slate-600">
+                  <div className="text-sm font-semibold text-brand-navy">
+                    {t("remoteSigningLinkLabel")}
+                  </div>
+                  <div className="mt-1 text-sm text-muted-foreground">
                     {t("remoteSigningLinkDesc")}
                   </div>
                 </div>
@@ -281,15 +323,19 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                   disabled={pending}
                   className="w-full sm:w-auto"
                 >
-                  <Link2 className="mr-2 h-4 w-4" />
+                  {pending ? (
+                    <Spinner className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Link2 className="mr-2 h-4 w-4" />
+                  )}
                   {t("sendLink")}
                 </Button>
               </div>
 
               {remoteLink ? (
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <Input readOnly value={remoteLink} />
-                  <div className="flex gap-2">
+                <div className="mt-4 flex flex-col gap-3">
+                  <Input readOnly value={remoteLink} className="text-xs" />
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
                       type="button"
                       variant="outline"
@@ -303,7 +349,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                       }}
                       className="w-full sm:w-auto"
                     >
-                      <Copy className="mr-2 h-4 w-4" />
+                      <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
                       {t("copy")}
                     </Button>
                     <Button
@@ -312,7 +358,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                       onClick={() => window.open(remoteLink, "_blank", "noreferrer")}
                       className="w-full sm:w-auto"
                     >
-                      <ExternalLink className="mr-2 h-4 w-4" />
+                      <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
                       {t("open")}
                     </Button>
                   </div>
@@ -320,152 +366,268 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
               ) : null}
             </div>
 
-            <SignaturePad
-              ref={retailerRef}
-              label={t("retailerSignatureLabel")}
-              description={t("retailerSignatureDesc")}
-            />
+            {(remoteLink || signingState?.signLinkSentAt) && !signingState?.signLinkUsedAt ? (
+              <div className="flex items-center gap-3 rounded-xl border border-brand-navy/10 bg-brand-navy/[0.04] p-4 text-sm">
+                <RefreshCw
+                  className={cn("h-4 w-4 shrink-0 text-brand-navy", autoRefreshActive && "animate-spin")}
+                  aria-hidden="true"
+                />
+                <span className="text-muted-foreground">{t("waitingForRetailer")}</span>
+              </div>
+            ) : null}
 
-            <p className="text-sm text-slate-600">
-              La sottoscrizione del presente Contratto è confermata tramite verifica OTP.
-            </p>
-
-            <label className="flex items-start gap-3 rounded-lg border-2 border-brand-blue/10 bg-brand-blue/5 p-4 text-sm transition-colors hover:bg-brand-blue/10">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-                checked={ack}
-                onChange={(e) => setAck(e.target.checked)}
-              />
-              <span className="leading-relaxed font-medium text-brand-navy">
-                {t("termsAcceptance")}
-              </span>
-            </label>
-
-            <label className="flex items-start gap-3 rounded-lg border-2 border-brand-green/10 bg-brand-green/5 p-4 text-sm transition-colors hover:bg-brand-green/10">
-              <input
-                type="checkbox"
-                className="mt-0.5 h-5 w-5 rounded border-gray-300 text-brand-green focus:ring-brand-green"
-                checked={gdpr}
-                onChange={(e) => setGdpr(e.target.checked)}
-              />
-              <span className="leading-relaxed font-medium text-brand-navy">
-                {t("gdprConsent")}
-              </span>
-            </label>
-
-            <div className="flex flex-col pt-2 sm:flex-row sm:justify-end">
+            <div className="flex justify-start">
               <Button
-                onClick={onNext}
+                variant="ghost"
+                onClick={() => setMode(null)}
                 disabled={pending}
-                className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8"
+                className="w-full sm:w-auto"
               >
-                {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                {t("next")}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                {t("changeSigningMethod")}
               </Button>
             </div>
           </div>
+        ) : null}
 
-          <div className={step === 2 ? "flex flex-col gap-6" : "hidden"}>
-            <div className="rounded-lg border bg-green-50 p-4 text-green-800 flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="text-sm font-medium">{t("retailerSignedAccepted")}</span>
-            </div>
+        {mode === "device" ? (
+          <div className="flex flex-col gap-6">
+            {step === 1 ? (
+              <div className="flex flex-col gap-5">
+                <SignaturePad
+                  ref={retailerRef}
+                  label={t("retailerSignatureLabel")}
+                  description={t("retailerSignatureDesc")}
+                />
 
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <div className="text-sm font-semibold text-brand-navy">{t("otpVerification")}</div>
-              <div className="mt-1 text-sm text-slate-600">
-                {t("otpVerificationDesc").replace("{email}", otpSentTo ?? "the retailer email")}
-              </div>
-              {autoRefreshActive ? (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  {t("waitingForRetailer")}
-                </div>
-              ) : null}
-              <div className="mt-4 flex justify-center">
-                <InputOTP
-                  maxLength={6}
-                  value={otp}
-                  onChange={(v) => setOtp(v)}
-                  autoFocus
-                  autoComplete="one-time-code"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
+                <p className="text-sm text-muted-foreground">{t("otpConfirmNote")}</p>
 
-              <div className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-brand-blue/10 bg-brand-blue/5 p-4 text-sm transition-colors hover:bg-brand-blue/10">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
+                    checked={ack}
+                    onChange={(e) => setAck(e.target.checked)}
+                  />
+                  <span className="font-medium leading-relaxed text-brand-navy">
+                    {t("termsAcceptance")}
+                  </span>
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border-2 border-brand-green/10 bg-brand-green/5 p-4 text-sm transition-colors hover:bg-brand-green/10">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-brand-green focus:ring-brand-green"
+                    checked={gdpr}
+                    onChange={(e) => setGdpr(e.target.checked)}
+                  />
+                  <span className="font-medium leading-relaxed text-brand-navy">
+                    {t("gdprConsent")}
+                  </span>
+                </label>
+
                 <Button
-                  variant="outline"
-                  onClick={() => {
-                    setOtp("")
-                    setOtpSentTo(null)
-                    setOtpVerifiedAt(null)
-                    setStep(1)
-                  }}
+                  onClick={onNext}
                   disabled={pending}
-                  className="w-full sm:w-auto"
+                  className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:self-end sm:px-8"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  {t("backToRetailer")}
+                  {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
+                  {t("next")}
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                 </Button>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <Button variant="outline" onClick={onResendOtp} disabled={pending} className="w-full sm:w-auto">
-                    {t("resendOtp")}
+              </div>
+            ) : null}
+
+            {step === 2 ? (
+              <div className="flex flex-col gap-5">
+                <StatusBanner icon={<CheckCircle2 className="h-5 w-5" />}>
+                  {t("retailerSignedAccepted")}
+                </StatusBanner>
+
+                <div className="rounded-xl border bg-muted/30 p-4">
+                  <div className="text-sm font-semibold text-brand-navy">
+                    {t("otpVerification")}
+                  </div>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    {t("otpVerificationDesc").replace(
+                      "{email}",
+                      otpSentTo ?? "the retailer email",
+                    )}
+                  </div>
+                  {autoRefreshActive ? (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      {t("waitingForRetailer")}
+                    </div>
+                  ) : null}
+                  <div className="mt-4 flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      value={otp}
+                      onChange={(v) => setOtp(v)}
+                      autoFocus
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setOtp("")
+                        setOtpSentTo(null)
+                        setOtpVerifiedAt(null)
+                        setStep(1)
+                      }}
+                      disabled={pending}
+                      className="w-full sm:w-auto"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                      {t("backToRetailer")}
+                    </Button>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <Button
+                        variant="outline"
+                        onClick={onResendOtp}
+                        disabled={pending}
+                        className="w-full sm:w-auto"
+                      >
+                        {t("resendOtp")}
+                      </Button>
+                      <Button
+                        onClick={onVerifyOtp}
+                        disabled={pending || otp.replace(/\s+/g, "").length !== 6}
+                        className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8"
+                      >
+                        {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
+                        {t("verifyOtp")}
+                        <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 3 ? (
+              <div className="flex flex-col gap-5">
+                <StatusBanner icon={<CheckCircle2 className="h-5 w-5" />}>
+                  {t("retailerSignedOtpVerified")}
+                </StatusBanner>
+
+                <SignaturePad
+                  ref={staffRef}
+                  label={t("staffSignatureLabel")}
+                  description={t("staffSignatureDesc")}
+                />
+
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(2)}
+                    disabled={pending}
+                    className="w-full sm:w-auto"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                    {t("backToOtp")}
                   </Button>
                   <Button
-                    onClick={onVerifyOtp}
-                    disabled={pending || otp.replace(/\\s+/g, "").length !== 6}
-                    className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto sm:px-8"
+                    onClick={onSubmit}
+                    disabled={pending}
+                    className="w-full bg-brand-green font-bold text-brand-navy hover:bg-brand-green/90 sm:w-auto sm:px-8"
                   >
                     {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                    {t("verifyOtp")}
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    {t("completeAndGeneratePdf")}
                   </Button>
                 </div>
               </div>
-            </div>
-          </div>
+            ) : null}
 
-          <div className={step === 3 ? "flex flex-col gap-6" : "hidden"}>
-            <div className="rounded-lg border bg-green-50 p-4 text-green-800 flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="text-sm font-medium">{t("retailerSignedOtpVerified")}</span>
-            </div>
-
-            <SignaturePad
-              ref={staffRef}
-              label={t("staffSignatureLabel")}
-              description={t("staffSignatureDesc")}
-            />
-
-            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-              <Button variant="outline" onClick={() => setStep(2)} disabled={pending} className="w-full sm:w-auto">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                {t("backToOtp")}
-              </Button>
+            <div className="flex justify-start border-t pt-4">
               <Button
-                onClick={onSubmit}
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setMode(null)
+                  setStep(0)
+                }}
                 disabled={pending}
-                className="w-full bg-brand-green font-bold text-brand-navy hover:bg-brand-green/90 sm:w-auto sm:px-8"
+                className="w-full text-muted-foreground sm:w-auto"
               >
-                {pending ? <Spinner className="mr-2 h-4 w-4" /> : null}
-                {t("completeAndGeneratePdf")}
+                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                {t("changeSigningMethod")}
               </Button>
             </div>
           </div>
-        </div>
+        ) : null}
       </CardContent>
     </Card>
+  )
+}
+
+function MethodCard({
+  icon,
+  title,
+  description,
+  onClick,
+}: {
+  icon: React.ReactNode
+  title: string
+  description: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex flex-col items-start gap-3 rounded-xl border-2 border-border bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-brand-navy/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-navy"
+    >
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-navy/10 text-brand-navy transition-colors group-hover:bg-brand-navy group-hover:text-white">
+        {icon}
+      </span>
+      <span className="text-sm font-semibold text-brand-navy">{title}</span>
+      <span className="text-xs leading-relaxed text-muted-foreground">{description}</span>
+    </button>
+  )
+}
+
+function StepTracker({ step }: { step: 0 | 1 | 2 | 3 }) {
+  return (
+    <div className="flex items-center gap-1.5 sm:shrink-0">
+      {[1, 2, 3].map((n) => (
+        <div
+          key={n}
+          className={cn(
+            "h-1.5 rounded-full transition-all",
+            step >= n ? "w-9 bg-brand-navy" : "w-6 bg-muted",
+          )}
+        />
+      ))}
+    </div>
+  )
+}
+
+function StatusBanner({
+  icon,
+  children,
+}: {
+  icon: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+      <span className="shrink-0 text-emerald-600">{icon}</span>
+      <span className="font-medium">{children}</span>
+    </div>
   )
 }

@@ -39,6 +39,7 @@ export async function createUserAction(input: {
   branch: string | null
   branches?: string[] | null
   zone: string | null
+  can_capture_signature?: boolean
 }): Promise<ActionResult> {
   try {
     await requireAdmin()
@@ -80,6 +81,7 @@ export async function createUserAction(input: {
       branches: input.role === "RSM" ? normalizedBranches : null,
       zone: input.role === "FSE" ? input.zone : null,
       is_active: true,
+      can_capture_signature: input.can_capture_signature ?? true,
     })
 
     if (insertError) return { ok: false, error: insertError.message }
@@ -100,6 +102,7 @@ export async function updateUserAction(
     branches: string[] | null
     zone: string | null
     is_active: boolean
+    can_capture_signature: boolean
   }>,
 ): Promise<ActionResult> {
   try {
