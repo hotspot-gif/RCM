@@ -8,12 +8,12 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
-  Copy,
-  ExternalLink,
   Link2,
   Smartphone,
+  Mail,
   RefreshCw,
   PenLine,
+  Send,
 } from "lucide-react"
 import {
   Card,
@@ -22,7 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { SignaturePad, type SignaturePadHandle } from "./signature-pad"
@@ -53,7 +52,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
   const [otp, setOtp] = useState("")
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null)
   const [otpVerifiedAt, setOtpVerifiedAt] = useState<string | null>(null)
-  const [remoteLink, setRemoteLink] = useState<string | null>(null)
+  const [linkSent, setLinkSent] = useState(false)
   const [autoRefreshActive, setAutoRefreshActive] = useState(false)
   const [signingState, setSigningState] = useState<null | {
     retailerSignaturePath: string | null
@@ -108,7 +107,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
 
   useEffect(() => {
     const shouldPoll =
-      (!!remoteLink || !!signingState?.signLinkSentAt) &&
+      (linkSent || !!signingState?.signLinkSentAt) &&
       !signingState?.signLinkUsedAt &&
       !(!!signingState?.retailerSignaturePath && !!signingState?.otpVerifiedAt)
 
@@ -134,7 +133,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       cancelled = true
       window.clearInterval(id)
     }
-  }, [remoteLink, refreshSigningState, router, signingState, step, otpVerifiedAt, t])
+  }, [linkSent, refreshSigningState, router, signingState, step, otpVerifiedAt, t])
 
   function onNext() {
     const retailerData = retailerRef.current?.toDataUrl()
@@ -210,13 +209,14 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
         toast.error(res.error)
         return
       }
-      setRemoteLink(res.data!.url)
-      await refreshSigningState()
-      if (res.data!.emailed && res.data!.sentTo) {
-        toast.success(t("signingLinkSent").replace("{email}", res.data!.sentTo))
-      } else {
-        toast.success(t("signingLinkGenerated"))
+      if (!res.data!.emailed) {
+        toast.error(t("signingLinkEmailFailed"))
+        return
       }
+      setLinkSent(true)
+      setOtpSentTo(res.data!.sentTo)
+      await refreshSigningState()
+      toast.success(t("signingLinkSent").replace("{email}", res.data!.sentTo ?? ""))
     })
   }
 
@@ -270,20 +270,24 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
             : t("stepStaffSignature")
 
   return (
-    <Card className="overflow-hidden border-2 shadow-lg">
-      <CardHeader className="border-b bg-gradient-to-br from-brand-navy/[0.06] to-transparent">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <Card className="gap-0 overflow-hidden border-2 p-0 shadow-lg">
+      <CardHeader className="gap-1.5 rounded-t-xl bg-[#21264e] px-5 py-5 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <PenLine className="h-5 w-5 shrink-0 text-brand-navy" aria-hidden="true" />
+            <CardTitle className="flex items-center gap-2.5 text-lg text-white sm:text-xl">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                <PenLine className="h-4 w-4 text-[#08dc7d]" aria-hidden="true" />
+              </span>
               {t("contractFinalization")}
             </CardTitle>
-            <CardDescription className="mt-1">{subtitle}</CardDescription>
+            <CardDescription className="mt-1.5 text-sm text-white/70">
+              {subtitle}
+            </CardDescription>
           </div>
           {mode === "device" ? <StepTracker step={step} /> : null}
         </div>
       </CardHeader>
-      <CardContent className="pt-6">
+      <CardContent className="px-5 py-6 sm:px-6">
         {mode === null ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <MethodCard
@@ -318,55 +322,27 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
                 </div>
                 <Button
                   type="button"
-                  variant="outline"
                   onClick={onSendRemoteLink}
-                  disabled={pending}
-                  className="w-full sm:w-auto"
+                  disabled={pending || linkSent}
+                  className="w-full bg-brand-navy hover:bg-brand-navy/90 sm:w-auto"
                 >
                   {pending ? (
                     <Spinner className="mr-2 h-4 w-4" />
                   ) : (
-                    <Link2 className="mr-2 h-4 w-4" />
+                    <Mail className="mr-2 h-4 w-4" aria-hidden="true" />
                   )}
-                  {t("sendLink")}
+                  {linkSent ? t("linkSent") : t("sendLink")}
                 </Button>
               </div>
-
-              {remoteLink ? (
-                <div className="mt-4 flex flex-col gap-3">
-                  <Input readOnly value={remoteLink} className="text-xs" />
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(remoteLink)
-                          toast.success(t("linkCopied"))
-                        } catch {
-                          toast.error(t("linkCopyError"))
-                        }
-                      }}
-                      className="w-full sm:w-auto"
-                    >
-                      <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-                      {t("copy")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => window.open(remoteLink, "_blank", "noreferrer")}
-                      className="w-full sm:w-auto"
-                    >
-                      <ExternalLink className="mr-2 h-4 w-4" aria-hidden="true" />
-                      {t("open")}
-                    </Button>
-                  </div>
-                </div>
-              ) : null}
             </div>
 
-            {(remoteLink || signingState?.signLinkSentAt) && !signingState?.signLinkUsedAt ? (
+            {linkSent ? (
+              <StatusBanner icon={<Send className="h-5 w-5" />}>
+                {t("signingLinkSent").replace("{email}", otpSentTo ?? "the retailer email")}
+              </StatusBanner>
+            ) : null}
+
+            {linkSent && !signingState?.signLinkUsedAt ? (
               <div className="flex items-center gap-3 rounded-xl border border-brand-navy/10 bg-brand-navy/[0.04] p-4 text-sm">
                 <RefreshCw
                   className={cn("h-4 w-4 shrink-0 text-brand-navy", autoRefreshActive && "animate-spin")}
@@ -609,7 +585,7 @@ function StepTracker({ step }: { step: 0 | 1 | 2 | 3 }) {
           key={n}
           className={cn(
             "h-1.5 rounded-full transition-all",
-            step >= n ? "w-9 bg-brand-navy" : "w-6 bg-muted",
+            step >= n ? "w-9 bg-[#08dc7d]" : "w-6 bg-white/25",
           )}
         />
       ))}
