@@ -273,7 +273,10 @@ export async function saveRetailerSignatureAction(input: {
   gdpr: boolean
 }): Promise<ActionResult<{ retailerSignaturePath: string }>> {
   try {
-    await requireUser()
+    const user = await requireUser()
+    if (user.can_capture_signature === false) {
+      return { ok: false, error: "Your account is not authorized for on-device signing." }
+    }
     const supabase = await createClient()
     const nowIso = new Date().toISOString()
 
@@ -374,6 +377,9 @@ export async function sendRetailerSigningLinkAction(
 > {
   try {
     const user = await requireUser()
+    if (user.can_use_remote_link === false) {
+      return { ok: false, error: "Your account is not authorized to send remote signing links." }
+    }
     const supabase = await createClient()
 
     const { data: contractRow, error: contractErr } = await supabase
@@ -535,6 +541,9 @@ export async function finalizeContractAction(input: {
 }): Promise<ActionResult<{ pdfPath: string }>> {
   try {
     const staffUser = await requireUser()
+    if (staffUser.can_capture_signature === false) {
+      return { ok: false, error: "Your account is not authorized for on-device signing." }
+    }
     const supabase = await createClient()
     const signedAtIso = new Date().toISOString()
 
@@ -1339,6 +1348,9 @@ export async function getDraftContractPdfAction(
 ): Promise<ActionResult<{ base64: string; filename: string }>> {
   try {
     const user = await requireUser()
+    if (user.can_download_draft === false) {
+      return { ok: false, error: "Your account is not authorized to download draft contracts." }
+    }
     const supabase = await createClient()
 
     const { data: contractRow, error: contractErr } = await supabase
@@ -1368,6 +1380,9 @@ export async function getDraftContractPdfUrlAction(
 ): Promise<ActionResult<{ url: string }>> {
   try {
     const user = await requireUser()
+    if (user.can_download_draft === false) {
+      return { ok: false, error: "Your account is not authorized to download draft contracts." }
+    }
     const supabase = await createClient()
 
     const { data: contractRow, error: contractErr } = await supabase
@@ -1408,6 +1423,9 @@ export async function sendDraftContractEmailAction(
 ): Promise<ActionResult<{ sentTo: string[] }>> {
   try {
     const user = await requireUser()
+    if (user.can_download_draft === false) {
+      return { ok: false, error: "Your account is not authorized to share draft contracts." }
+    }
     const supabase = await createClient()
 
     const { data: contractRow, error: contractErr } = await supabase

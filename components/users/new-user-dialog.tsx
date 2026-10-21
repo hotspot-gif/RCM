@@ -27,6 +27,8 @@ const initial = {
   branches: null as string[] | null,
   zone: null as string | null,
   can_capture_signature: true,
+  can_use_remote_link: true,
+  can_download_draft: true,
 }
 
 export function NewUserDialog() {
@@ -50,6 +52,8 @@ export function NewUserDialog() {
         branches: values.branches,
         zone: values.zone,
         can_capture_signature: values.can_capture_signature,
+        can_use_remote_link: values.can_use_remote_link,
+        can_download_draft: values.can_download_draft,
       })
       if (!res.ok) {
         toast.error(res.error)

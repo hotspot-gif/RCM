@@ -22,6 +22,8 @@ interface Values {
   branches?: string[] | null
   zone: string | null
   can_capture_signature?: boolean
+  can_use_remote_link?: boolean
+  can_download_draft?: boolean
 }
 
 interface Props {
@@ -185,23 +187,61 @@ export function UserFormFields({
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3 rounded-lg border bg-white p-3 shadow-sm">
+      <div className="flex flex-col gap-2 rounded-lg border bg-white p-3 shadow-sm">
         <div className="flex flex-col">
           <Label className="text-xs font-semibold text-brand-navy uppercase tracking-wider">
-            Digital Signature Capture
+            Contract Finalization Access
           </Label>
           <span className="text-[10px] text-muted-foreground font-medium">
-            {(values.can_capture_signature ?? true)
-              ? "Authorized to capture signatures on this device"
-              : "Restricted — must download the draft PDF and sign offline"}
+            Choose which signing options this user may use.
           </span>
         </div>
-        <Switch
+
+        <PermissionToggle
+          label="Device signature"
+          description="Capture the retailer's signature directly on this device."
           checked={values.can_capture_signature ?? true}
-          onCheckedChange={(v) => onChange({ can_capture_signature: v })}
-          className="data-[state=checked]:bg-emerald-500 scale-90 shrink-0"
+          onChange={(v) => onChange({ can_capture_signature: v })}
+        />
+        <PermissionToggle
+          label="Remote signing link"
+          description="Email a remote signing link to the retailer."
+          checked={values.can_use_remote_link ?? true}
+          onChange={(v) => onChange({ can_use_remote_link: v })}
+        />
+        <PermissionToggle
+          label="Download draft"
+          description="Download the unsigned draft to collect the signature offline."
+          checked={values.can_download_draft ?? true}
+          onChange={(v) => onChange({ can_download_draft: v })}
         />
       </div>
+    </div>
+  )
+}
+
+function PermissionToggle({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string
+  description: string
+  checked: boolean
+  onChange: (value: boolean) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-t pt-2 first:border-t-0 first:pt-0">
+      <div className="flex flex-col">
+        <Label className="text-xs font-medium text-brand-navy">{label}</Label>
+        <span className="text-[10px] text-muted-foreground font-medium">{description}</span>
+      </div>
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        className="data-[state=checked]:bg-emerald-500 scale-90 shrink-0"
+      />
     </div>
   )
 }

@@ -38,7 +38,15 @@ import { cn } from "@/lib/utils"
 
 type SignMode = "remote" | "device"
 
-export function ContractSignPanel({ contractId }: { contractId: string }) {
+export function ContractSignPanel({
+  contractId,
+  allowDevice = true,
+  allowRemote = true,
+}: {
+  contractId: string
+  allowDevice?: boolean
+  allowRemote?: boolean
+}) {
   const router = useRouter()
   const { t } = useI18n()
   const retailerRef = useRef<SignaturePadHandle>(null)
@@ -91,15 +99,17 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
     setOtpVerifiedAt(res.data!.otpVerifiedAt)
     setOtpSentTo(res.data!.email)
 
-    if (res.data!.retailerSignaturePath && res.data!.otpVerifiedAt) {
-      setMode("device")
-      setStep(3)
-    } else if (res.data!.retailerSignaturePath) {
-      setMode("device")
-      setStep(2)
+    if (allowDevice) {
+      if (res.data!.retailerSignaturePath && res.data!.otpVerifiedAt) {
+        setMode("device")
+        setStep(3)
+      } else if (res.data!.retailerSignaturePath) {
+        setMode("device")
+        setStep(2)
+      }
     }
     return res.data!
-  }, [contractId])
+  }, [contractId, allowDevice])
 
   useEffect(() => {
     refreshSigningState()
@@ -289,26 +299,30 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
       </CardHeader>
       <CardContent className="px-5 py-6 sm:px-6">
         {mode === null ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MethodCard
-              icon={<Link2 className="h-5 w-5" aria-hidden="true" />}
-              title={t("useRemoteLink")}
-              description={t("useRemoteLinkDesc")}
-              onClick={() => setMode("remote")}
-            />
-            <MethodCard
-              icon={<Smartphone className="h-5 w-5" aria-hidden="true" />}
-              title={t("useThisDevice")}
-              description={t("useThisDeviceDesc")}
-              onClick={() => {
-                setMode("device")
-                setStep(1)
-              }}
-            />
+          <div className={cn("grid gap-3", allowDevice && allowRemote && "sm:grid-cols-2")}>
+            {allowRemote ? (
+              <MethodCard
+                icon={<Link2 className="h-5 w-5" aria-hidden="true" />}
+                title={t("useRemoteLink")}
+                description={t("useRemoteLinkDesc")}
+                onClick={() => setMode("remote")}
+              />
+            ) : null}
+            {allowDevice ? (
+              <MethodCard
+                icon={<Smartphone className="h-5 w-5" aria-hidden="true" />}
+                title={t("useThisDevice")}
+                description={t("useThisDeviceDesc")}
+                onClick={() => {
+                  setMode("device")
+                  setStep(1)
+                }}
+              />
+            ) : null}
           </div>
         ) : null}
 
-        {mode === "remote" ? (
+        {mode === "remote" && allowRemote ? (
           <div className="flex flex-col gap-5">
             <div className="rounded-xl border bg-muted/30 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -366,7 +380,7 @@ export function ContractSignPanel({ contractId }: { contractId: string }) {
           </div>
         ) : null}
 
-        {mode === "device" ? (
+        {mode === "device" && allowDevice ? (
           <div className="flex flex-col gap-6">
             {step === 1 ? (
               <div className="flex flex-col gap-5">

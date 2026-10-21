@@ -42,6 +42,8 @@ export function EditUserDialog({
     zone: null as string | null,
     is_active: true,
     can_capture_signature: true,
+    can_use_remote_link: true,
+    can_download_draft: true,
   })
   const [pending, startTransition] = useTransition()
   const [tempPassword, setTempPassword] = useState<string | null>(null)
@@ -60,6 +62,8 @@ export function EditUserDialog({
         zone: user.zone,
         is_active: user.is_active,
         can_capture_signature: user.can_capture_signature ?? true,
+        can_use_remote_link: user.can_use_remote_link ?? true,
+        can_download_draft: user.can_download_draft ?? true,
       })
     }
   }, [user])
@@ -82,6 +86,8 @@ export function EditUserDialog({
         zone: values.zone,
         is_active: values.is_active,
         can_capture_signature: values.can_capture_signature,
+        can_use_remote_link: values.can_use_remote_link,
+        can_download_draft: values.can_download_draft,
       })
       if (!res.ok) {
         toast.error(res.error)

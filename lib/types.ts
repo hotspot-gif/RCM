@@ -10,6 +10,8 @@ export interface AppUser {
   zone: string | null
   is_active: boolean
   can_capture_signature?: boolean | null
+  can_use_remote_link?: boolean | null
+  can_download_draft?: boolean | null
   created_at: string
 }
 

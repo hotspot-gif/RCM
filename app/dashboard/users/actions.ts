@@ -40,6 +40,8 @@ export async function createUserAction(input: {
   branches?: string[] | null
   zone: string | null
   can_capture_signature?: boolean
+  can_use_remote_link?: boolean
+  can_download_draft?: boolean
 }): Promise<ActionResult> {
   try {
     await requireAdmin()
@@ -82,6 +84,8 @@ export async function createUserAction(input: {
       zone: input.role === "FSE" ? input.zone : null,
       is_active: true,
       can_capture_signature: input.can_capture_signature ?? true,
+      can_use_remote_link: input.can_use_remote_link ?? true,
+      can_download_draft: input.can_download_draft ?? true,
     })
 
     if (insertError) return { ok: false, error: insertError.message }
@@ -103,6 +107,8 @@ export async function updateUserAction(
     zone: string | null
     is_active: boolean
     can_capture_signature: boolean
+    can_use_remote_link: boolean
+    can_download_draft: boolean
   }>,
 ): Promise<ActionResult> {
   try {

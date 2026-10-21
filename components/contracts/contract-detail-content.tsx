@@ -64,7 +64,10 @@ export function ContractDetailContent({ contract, user, isEdit }: ContractDetail
 
   const dateFormat = language === "en" ? "en-GB" : "it-IT"
 
-  const canCapture = user.can_capture_signature !== false
+  const canCaptureSignature = user.can_capture_signature !== false
+  const canUseRemoteLink = user.can_use_remote_link !== false
+  const canDownloadDraft = user.can_download_draft !== false
+  const canFinalize = canCaptureSignature || canUseRemoteLink
 
   return (
     <div className="flex flex-col gap-5 pb-6 sm:gap-6">
@@ -171,7 +174,7 @@ export function ContractDetailContent({ contract, user, isEdit }: ContractDetail
         )}
 
         <div className="flex flex-col gap-5 lg:col-span-2 lg:gap-6">
-          {contract.status !== "SIGNED" && (
+          {contract.status !== "SIGNED" && canDownloadDraft && (
             <Card>
               <CardHeader>
                 <CardTitle>{t("draftActions")}</CardTitle>
@@ -184,8 +187,12 @@ export function ContractDetailContent({ contract, user, isEdit }: ContractDetail
           )}
 
           {contract.status !== "SIGNED" ? (
-            canCapture ? (
-              <ContractSignPanel contractId={contract.id} />
+            canFinalize ? (
+              <ContractSignPanel
+                contractId={contract.id}
+                allowDevice={canCaptureSignature}
+                allowRemote={canUseRemoteLink}
+              />
             ) : (
               <Card className="border-2 border-dashed shadow-sm">
                 <CardHeader>
